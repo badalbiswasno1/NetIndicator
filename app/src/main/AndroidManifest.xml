@@ -3,7 +3,8 @@
     package="com.my.netindicator">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
-    <application android:label="NetIndicator">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application android:label="True Network">
         <activity android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
