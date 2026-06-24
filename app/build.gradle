@@ -1,28 +1,31 @@
-apply plugin: 'com.android.application'
-android {
-    namespace 'com.my.netindicator'
-    compileSdk 34
-    defaultConfig {
-        applicationId "com.my.netindicator"
-        minSdk 26
-        targetSdk 34
-        versionCode 10
-        versionName "1.0"
-    }
+plugins {
+    id 'com.android.application'
 }
 
 android {
-    signingConfigs {
-        debug {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
-        }
+    namespace 'com.my.netindicator'
+    compileSdk 33
+    
+    defaultConfig {
+        applicationId "com.my.netindicator"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0"
     }
+    
     buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    // No dependencies - pure Android SDK
 }
