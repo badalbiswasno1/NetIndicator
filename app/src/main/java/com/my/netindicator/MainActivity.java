@@ -94,6 +94,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 });
+                handler.postDelayed(this, 30000);
             }
         };
         handler.post(updater);
