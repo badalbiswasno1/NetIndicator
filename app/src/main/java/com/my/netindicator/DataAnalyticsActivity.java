@@ -55,7 +55,7 @@ public class DataAnalyticsActivity extends Activity {
         titleRow.setPadding(0, 0, 0, 20);
 
         TextView backArrow = new TextView(this);
-        backArrow.setText("←");
+        backArrow.setText("<");
         backArrow.setTextColor(Color.WHITE);
         backArrow.setTextSize(28);
         backArrow.setPadding(0, 0, 20, 0);
