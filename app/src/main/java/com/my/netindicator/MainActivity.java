@@ -124,7 +124,6 @@ public class MainActivity extends Activity {
         swipeRefresh.setOnRefreshListener(() -> {
             vibrate();
             updateUI();
-            swipeRefresh.setRefreshing(false);
         });
 
         ScrollView scroll = new ScrollView(this);
@@ -327,6 +326,7 @@ public class MainActivity extends Activity {
 
                 updateHistory();
                 loadingBar.setVisibility(View.GONE);
+                swipeRefresh.setRefreshing(false);
             });
         }).start();
     }
