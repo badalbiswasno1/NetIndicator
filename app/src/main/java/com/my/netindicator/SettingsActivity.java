@@ -48,8 +48,7 @@ public class SettingsActivity extends Activity {
         addMenuItem(main, "💾", "Export Data", ExportActivity.class);
 
         TextView about = new TextView(this);
-        about.setText("True Network v3.0
-Developed by: Badal Biswas");
+        about.setText("True Network v3.0\nDeveloped by: Badal Biswas");
         about.setTextColor(Color.parseColor("#AAAAAA"));
         about.setTextSize(13);
         about.setGravity(Gravity.CENTER);

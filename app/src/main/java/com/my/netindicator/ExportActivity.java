@@ -71,16 +71,14 @@ public class ExportActivity extends Activity {
         try {
             JSONArray logs = logger.getLogs();
             StringBuilder sb = new StringBuilder();
-            sb.append("Date,Time,Grade,Ping(ms),Data(KB)
-");
+            sb.append("Date,Time,Grade,Ping(ms),Data(KB)\n");
             for (int i = 0; i < logs.length(); i++) {
                 JSONObject obj = logs.getJSONObject(i);
                 sb.append(obj.optString("date", "")).append(",")
                   .append(obj.optString("time", "")).append(",")
                   .append(obj.optString("grade", "")).append(",")
                   .append(obj.optLong("ping", 0)).append(",")
-                  .append(obj.optLong("data", 0)).append("
-");
+                  .append(obj.optLong("data", 0)).append("\n");
             }
 
             File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
