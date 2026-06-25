@@ -13,7 +13,7 @@ public class FloatingWindowPrefs {
     }
 
     public boolean isVisible() {
-        return prefs.getBoolean("visible", true);
+        return prefs.getBoolean("visible", false);
     }
 
     public void setVisible(boolean visible) {
