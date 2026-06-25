@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -24,11 +24,27 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build with Gradle
-      run: ./gradlew build --no-daemon
+    - name: Decode Keystore
+      run: |
+        echo "${{ secrets.KEYSTORE }}" | base64 -d > app/release.keystore
+
+    - name: Build Release APK
+      run: ./gradlew assembleRelease --no-daemon
+      env:
+        KEYSTORE_PATH: release.keystore
+        KEYSTORE_PASSWORD: truenet123
+        KEY_ALIAS: truenetwork
+        KEY_PASSWORD: truenet123
+
+    - name: Sign APK
+      run: |
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore app/release.keystore \
+          -storepass truenet123 -keypass truenet123 \
+          app/build/outputs/apk/release/app-release-unsigned.apk truenetwork
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: NetIndicator-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
