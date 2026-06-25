@@ -35,16 +35,31 @@ public class SettingsActivity extends Activity {
         LinearLayout main = new LinearLayout(this);
         main.setOrientation(LinearLayout.VERTICAL);
         main.setBackgroundColor(Color.parseColor("#111111"));
-        main.setPadding(40, 80, 40, 40);
+        main.setPadding(40, 60, 40, 40);
         scroll.addView(main);
 
-        // Title
+        // Title with back arrow at top
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setPadding(0, 0, 0, 30);
+
+        TextView backArrow = new TextView(this);
+        backArrow.setText("←");
+        backArrow.setTextColor(Color.WHITE);
+        backArrow.setTextSize(28);
+        backArrow.setPadding(0, 0, 20, 0);
+        backArrow.setOnClickListener(v -> finish());
+        titleRow.addView(backArrow);
+
         TextView title = new TextView(this);
         title.setText("⚙ " + langManager.get("settings"));
         title.setTextColor(Color.WHITE);
         title.setTextSize(24);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        main.addView(title);
+        titleRow.addView(title);
+
+        main.addView(titleRow);
 
         // ===== LANGUAGE SECTION =====
         addSectionTitle(main, "🌐 " + langManager.get("language"));
@@ -69,7 +84,6 @@ public class SettingsActivity extends Activity {
         // ===== FLOATING WINDOW SECTION =====
         addSectionTitle(main, "📱 Floating Window");
 
-        // Toggle
         Switch floatSwitch = new Switch(this);
         floatSwitch.setText("Show Floating Window");
         floatSwitch.setTextColor(Color.WHITE);
@@ -80,7 +94,6 @@ public class SettingsActivity extends Activity {
         });
         main.addView(floatSwitch);
 
-        // Position
         addLabel(main, "Position");
         String[] positions = {"Top Right", "Top Left", "Bottom Right", "Bottom Left"};
         final int[] gravities = {
@@ -106,22 +119,19 @@ public class SettingsActivity extends Activity {
         });
         main.addView(posSpinner);
 
-        // Text Size
         addLabel(main, "Text Size: " + (int)prefs.getSize());
         SeekBar sizeSeek = new SeekBar(this);
         sizeSeek.setMax(40);
         sizeSeek.setProgress((int)prefs.getSize() - 10);
         sizeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             public void onProgressChanged(SeekBar sb, int p, boolean u) {
-                float newSize = p + 10;
-                prefs.setSize(newSize);
+                prefs.setSize(p + 10);
             }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}
         });
         main.addView(sizeSeek);
 
-        // Transparency
         addLabel(main, "Transparency: " + prefs.getTransparency() + "%");
         SeekBar transSeek = new SeekBar(this);
         transSeek.setMax(100);
@@ -135,16 +145,11 @@ public class SettingsActivity extends Activity {
         });
         main.addView(transSeek);
 
-        // Text Color
         addLabel(main, "Text Color");
         String[] textColors = {"Green", "White", "Yellow", "Cyan", "Red", "Lime"};
         final int[] textColorValues = {
-            Color.parseColor("#00CC44"),
-            Color.WHITE,
-            Color.parseColor("#FFD700"),
-            Color.CYAN,
-            Color.parseColor("#E63329"),
-            Color.parseColor("#00FF00")
+            Color.parseColor("#00CC44"), Color.WHITE, Color.parseColor("#FFD700"),
+            Color.CYAN, Color.parseColor("#E63329"), Color.parseColor("#00FF00")
         };
         Spinner textColorSpinner = new Spinner(this);
         ArrayAdapter<String> tcAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, textColors);
@@ -157,16 +162,11 @@ public class SettingsActivity extends Activity {
         });
         main.addView(textColorSpinner);
 
-        // Background Color
         addLabel(main, "Background Color");
         String[] bgColors = {"Black", "Dark Gray", "Blue", "Purple", "Red", "Transparent"};
         final int[] bgColorValues = {
-            Color.BLACK,
-            Color.parseColor("#333333"),
-            Color.parseColor("#003366"),
-            Color.parseColor("#440044"),
-            Color.parseColor("#330000"),
-            Color.TRANSPARENT
+            Color.BLACK, Color.parseColor("#333333"), Color.parseColor("#003366"),
+            Color.parseColor("#440044"), Color.parseColor("#330000"), Color.TRANSPARENT
         };
         Spinner bgSpinner = new Spinner(this);
         ArrayAdapter<String> bgAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, bgColors);
@@ -179,7 +179,6 @@ public class SettingsActivity extends Activity {
         });
         main.addView(bgSpinner);
 
-        // Refresh Interval
         addLabel(main, "Refresh: " + (prefs.getRefreshInterval() / 1000) + " sec");
         SeekBar refreshSeek = new SeekBar(this);
         refreshSeek.setMax(9);
@@ -197,20 +196,12 @@ public class SettingsActivity extends Activity {
         addSectionTitle(main, "ℹ About");
 
         TextView versionText = new TextView(this);
-        versionText.setText("True Network v2.0\nExact Grade: 0.1 step precision\nDeveloped by: Badal Biswas");
+        versionText.setText("True Network v2.1\nExact Grade: 0.1 step precision\nSwipe to refresh\nDeveloped by: Badal Biswas");
         versionText.setTextColor(Color.parseColor("#AAAAAA"));
         versionText.setTextSize(13);
         versionText.setGravity(Gravity.CENTER);
         versionText.setPadding(0, 10, 0, 30);
         main.addView(versionText);
-
-        // Back Button
-        Button backBtn = new Button(this);
-        backBtn.setText("← Back");
-        backBtn.setBackgroundColor(Color.parseColor("#333333"));
-        backBtn.setTextColor(Color.WHITE);
-        backBtn.setOnClickListener(v -> finish());
-        main.addView(backBtn);
 
         setContentView(scroll);
     }

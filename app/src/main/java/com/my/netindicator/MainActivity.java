@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
 import android.telephony.CellInfo;
 import android.telephony.CellInfoGsm;
@@ -19,14 +21,18 @@ import android.telephony.CellSignalStrengthNr;
 import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.graphics.Color;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,6 +54,9 @@ public class MainActivity extends Activity {
     private NetworkLogger logger;
     private LanguageManager langManager;
     private FloatingWindowPrefs windowPrefs;
+    private SwipeRefreshLayout swipeRefresh;
+    private Vibrator vibrator;
+    private ProgressBar loadingBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +65,7 @@ public class MainActivity extends Activity {
         windowPrefs = new FloatingWindowPrefs(this);
         startTime = System.currentTimeMillis();
         logger = new NetworkLogger(this);
+        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
         if (!hasPermissions()) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
@@ -97,7 +107,26 @@ public class MainActivity extends Activity {
         return true;
     }
 
+    private void vibrate() {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(50);
+            }
+        }
+    }
+
     private void buildUI() {
+        // Root SwipeRefreshLayout
+        swipeRefresh = new SwipeRefreshLayout(this);
+        swipeRefresh.setColorSchemeColors(Color.parseColor("#00CC44"), Color.parseColor("#0099FF"), Color.parseColor("#FFD700"));
+        swipeRefresh.setOnRefreshListener(() -> {
+            vibrate();
+            updateUI();
+            swipeRefresh.setRefreshing(false);
+        });
+
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(Color.parseColor("#111111"));
 
@@ -108,14 +137,36 @@ public class MainActivity extends Activity {
         main.setGravity(Gravity.CENTER_HORIZONTAL);
         scroll.addView(main);
 
+        // Loading bar at top
+        loadingBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        loadingBar.setIndeterminate(true);
+        loadingBar.setVisibility(View.GONE);
+        main.addView(loadingBar);
+
+        // Title with back arrow
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setPadding(0, 0, 0, 20);
+
+        TextView backArrow = new TextView(this);
+        backArrow.setText("←");
+        backArrow.setTextColor(Color.WHITE);
+        backArrow.setTextSize(28);
+        backArrow.setPadding(0, 0, 20, 0);
+        backArrow.setOnClickListener(v -> finish());
+        titleRow.addView(backArrow);
+
         TextView title = new TextView(this);
         title.setText(langManager.get("true_network"));
         title.setTextColor(Color.WHITE);
-        title.setTextSize(26);
+        title.setTextSize(24);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setGravity(Gravity.CENTER);
-        main.addView(title);
+        titleRow.addView(title);
 
+        main.addView(titleRow);
+
+        // Grade Display
         tvGrade = new TextView(this);
         tvGrade.setText("?.0G");
         tvGrade.setTextSize(64);
@@ -125,6 +176,7 @@ public class MainActivity extends Activity {
         tvGrade.setPadding(0, 20, 0, 10);
         main.addView(tvGrade);
 
+        // Ping
         tvPing = new TextView(this);
         tvPing.setText(langManager.get("ping") + ": -- ms");
         tvPing.setTextSize(18);
@@ -132,6 +184,7 @@ public class MainActivity extends Activity {
         tvPing.setTextColor(Color.WHITE);
         main.addView(tvPing);
 
+        // Signal dBm
         tvDbm = new TextView(this);
         tvDbm.setText(langManager.get("signal") + ": -- dBm");
         tvDbm.setTextSize(14);
@@ -139,6 +192,7 @@ public class MainActivity extends Activity {
         tvDbm.setTextColor(Color.parseColor("#AAAAAA"));
         main.addView(tvDbm);
 
+        // Operator
         tvSignal = new TextView(this);
         tvSignal.setText(langManager.get("operator") + ": --");
         tvSignal.setTextColor(Color.parseColor("#00CC44"));
@@ -147,6 +201,7 @@ public class MainActivity extends Activity {
         tvSignal.setPadding(0, 20, 0, 5);
         main.addView(tvSignal);
 
+        // Running time
         tvTime = new TextView(this);
         tvTime.setText(langManager.get("running") + ": 0s");
         tvTime.setTextColor(Color.parseColor("#AAAAAA"));
@@ -154,6 +209,7 @@ public class MainActivity extends Activity {
         tvTime.setGravity(Gravity.CENTER);
         main.addView(tvTime);
 
+        // Data usage
         tvData = new TextView(this);
         tvData.setText("0 MB");
         tvData.setTextColor(Color.parseColor("#FFD700"));
@@ -162,6 +218,7 @@ public class MainActivity extends Activity {
         tvData.setPadding(0, 5, 0, 20);
         main.addView(tvData);
 
+        // History Section
         TextView histTitle = new TextView(this);
         histTitle.setText(langManager.get("network_history"));
         histTitle.setTextColor(Color.parseColor("#FFD700"));
@@ -176,34 +233,46 @@ public class MainActivity extends Activity {
         tvHistory.setPadding(0, 10, 0, 10);
         main.addView(tvHistory);
 
+        // Buttons
         Button clearBtn = new Button(this);
         clearBtn.setText(langManager.get("clear_history"));
         clearBtn.setBackgroundColor(Color.parseColor("#E63329"));
         clearBtn.setTextColor(Color.WHITE);
         clearBtn.setOnClickListener(v -> {
+            vibrate();
             logger.clear();
             tvHistory.setText(langManager.get("no_data"));
         });
         main.addView(clearBtn);
 
         Button analyticsBtn = new Button(this);
-        analyticsBtn.setText("\uD83D\uDCCA " + langManager.get("data_analytics"));
+        analyticsBtn.setText("📊 " + langManager.get("data_analytics"));
         analyticsBtn.setBackgroundColor(Color.parseColor("#0099FF"));
         analyticsBtn.setTextColor(Color.WHITE);
-        analyticsBtn.setOnClickListener(v -> startActivity(new Intent(this, DataAnalyticsActivity.class)));
+        analyticsBtn.setOnClickListener(v -> {
+            vibrate();
+            startActivity(new Intent(this, DataAnalyticsActivity.class));
+        });
         main.addView(analyticsBtn);
 
         Button settingsBtn = new Button(this);
-        settingsBtn.setText("\u2699 " + langManager.get("settings"));
+        settingsBtn.setText("⚙ " + langManager.get("settings"));
         settingsBtn.setBackgroundColor(Color.parseColor("#333333"));
         settingsBtn.setTextColor(Color.WHITE);
-        settingsBtn.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
+        settingsBtn.setOnClickListener(v -> {
+            vibrate();
+            startActivity(new Intent(this, SettingsActivity.class));
+        });
         main.addView(settingsBtn);
 
-        setContentView(scroll);
+        scroll.addView(main);
+        swipeRefresh.addView(scroll);
+        setContentView(swipeRefresh);
     }
 
     private void updateUI() {
+        runOnUiThread(() -> loadingBar.setVisibility(View.VISIBLE));
+
         TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
 
         int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
@@ -258,22 +327,19 @@ public class MainActivity extends Activity {
                 }
 
                 updateHistory();
+                loadingBar.setVisibility(View.GONE);
             });
         }).start();
     }
 
-    // ============ EXACT GRADE CALCULATION (0.1 steps) ============
+    // ============ EXACT GRADE CALCULATION ============
     private String calculateExactGrade(int networkType, int signalDbm) {
         double baseGrade = getBaseGrade(networkType);
-        
         if (baseGrade <= 0) return "?.0G";
-        
         double signalQuality = calculateSignalQuality(signalDbm);
-        
         double exactGrade = baseGrade + signalQuality;
         double maxGrade = baseGrade + 0.9;
         if (exactGrade > maxGrade) exactGrade = maxGrade;
-        
         return String.format("%.1fG", exactGrade);
     }
 
@@ -292,13 +358,10 @@ public class MainActivity extends Activity {
 
     private double calculateSignalQuality(int signalDbm) {
         if (signalDbm == 0) return 0.0;
-        
         if (signalDbm > -50) signalDbm = -50;
         if (signalDbm < -120) signalDbm = -120;
-        
         double normalized = (double)(signalDbm + 120) / 70.0;
         double quality = normalized * 0.9;
-        
         return Math.round(quality * 10) / 10.0;
     }
 
@@ -327,26 +390,17 @@ public class MainActivity extends Activity {
             if (!hasPermissions()) return 0;
             List<CellInfo> cells = tm.getAllCellInfo();
             if (cells == null || cells.isEmpty()) return 0;
-
             for (CellInfo cell : cells) {
                 if (!cell.isRegistered()) continue;
-
                 if (cell instanceof CellInfoLte) {
                     return ((CellInfoLte) cell).getCellSignalStrength().getDbm();
                 }
                 if (cell instanceof CellInfoNr) {
-                    // API 30+ has getSsRsrp(), fallback to getDbm() for older
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                         CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            try {
-                                return nr.getSsRsrp();
-                            } catch (Exception e) {
-                                return nr.getDbm();
-                            }
-                        } else {
-                            return nr.getDbm();
-                        }
+                            try { return nr.getSsRsrp(); } catch (Exception e) { return nr.getDbm(); }
+                        } else { return nr.getDbm(); }
                     }
                     return 0;
                 }
@@ -357,9 +411,7 @@ public class MainActivity extends Activity {
                     return ((CellInfoGsm) cell).getCellSignalStrength().getDbm();
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return 0;
     }
 
@@ -369,20 +421,16 @@ public class MainActivity extends Activity {
                 tvDbm.setText(langManager.get("signal") + ": No permission");
                 return;
             }
-
             List<CellInfo> cells = tm.getAllCellInfo();
             if (cells == null || cells.isEmpty()) {
                 tvDbm.setText(langManager.get("signal") + ": No signal info");
                 return;
             }
-
             for (CellInfo cell : cells) {
                 if (!cell.isRegistered()) continue;
-
                 if (cell instanceof CellInfoLte) {
                     CellSignalStrengthLte lte = ((CellInfoLte) cell).getCellSignalStrength();
-                    int rsrp = lte.getRsrp();
-                    tvDbm.setText("Signal: " + signalDbm + " dBm (RSRP: " + rsrp + ")");
+                    tvDbm.setText("Signal: " + signalDbm + " dBm (RSRP: " + lte.getRsrp() + ")");
                     return;
                 }
                 if (cell instanceof CellInfoNr) {
@@ -390,14 +438,8 @@ public class MainActivity extends Activity {
                         CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
                         int ssRsrp = 0;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            try {
-                                ssRsrp = nr.getSsRsrp();
-                            } catch (Exception e) {
-                                ssRsrp = nr.getDbm();
-                            }
-                        } else {
-                            ssRsrp = nr.getDbm();
-                        }
+                            try { ssRsrp = nr.getSsRsrp(); } catch (Exception e) { ssRsrp = nr.getDbm(); }
+                        } else { ssRsrp = nr.getDbm(); }
                         tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR SsRsrp: " + ssRsrp + ")");
                     } else {
                         tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR)");
@@ -434,9 +476,7 @@ public class MainActivity extends Activity {
                     return (long) Float.parseFloat(line.substring(start, end));
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return -1;
     }
 
@@ -446,7 +486,6 @@ public class MainActivity extends Activity {
             StringBuilder sb = new StringBuilder();
             sb.append("Time    Grade   Ping  Data\n");
             sb.append("---------------------------\n");
-
             int count = 0;
             for (int i = logs.length() - 1; i >= 0 && count < 10; i--) {
                 JSONObject obj = logs.getJSONObject(i);
@@ -456,11 +495,7 @@ public class MainActivity extends Activity {
                   .append(obj.getLong("data")).append("KB\n");
                 count++;
             }
-
-            if (count == 0) {
-                sb.append(langManager.get("no_data"));
-            }
-
+            if (count == 0) sb.append(langManager.get("no_data"));
             tvHistory.setText(sb.toString());
         } catch (Exception e) {
             tvHistory.setText("Error loading history");
