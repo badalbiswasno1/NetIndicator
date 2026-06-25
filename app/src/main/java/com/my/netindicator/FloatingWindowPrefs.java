@@ -83,4 +83,12 @@ public class FloatingWindowPrefs {
     public void setRefreshInterval(int interval) {
         prefs.edit().putInt("refresh_interval", interval).apply();
     }
+
+    public boolean isLocked() {
+        return prefs.getBoolean("locked", false);
+    }
+
+    public void setLocked(boolean locked) {
+        prefs.edit().putBoolean("locked", locked).apply();
+    }
 }

@@ -306,9 +306,24 @@ public class MainActivity extends Activity {
         new Thread(() -> {
             long ping = measurePing();
             final String pingText = ping >= 0 ? ping + " ms" : "timeout";
-            final int pingColor = ping < 0 ? Color.RED :
-                    ping < 100 ? Color.parseColor("#00CC44") :
-                    ping < 300 ? Color.parseColor("#FFD700") : Color.parseColor("#E63329");
+            final int pingColor;
+            if (ping < 0) {
+                pingColor = Color.parseColor("#FF0000");
+            } else if (ping < 50) {
+                pingColor = Color.parseColor("#00FF44");
+            } else if (ping < 100) {
+                pingColor = Color.parseColor("#00CC44");
+            } else if (ping < 150) {
+                pingColor = Color.parseColor("#88CC00");
+            } else if (ping < 200) {
+                pingColor = Color.parseColor("#FFD700");
+            } else if (ping < 300) {
+                pingColor = Color.parseColor("#FF8800");
+            } else if (ping < 500) {
+                pingColor = Color.parseColor("#FF4400");
+            } else {
+                pingColor = Color.parseColor("#CC0000");
+            }
 
             runOnUiThread(() -> {
                 tvPing.setText(langManager.get("ping") + ": " + pingText);

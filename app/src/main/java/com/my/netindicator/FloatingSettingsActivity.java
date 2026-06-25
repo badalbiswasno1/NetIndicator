@@ -117,6 +117,19 @@ public class FloatingSettingsActivity extends Activity {
         });
         main.addView(bgSpinner);
 
+        // Lock button
+        Button lockBtn = new Button(this);
+        lockBtn.setText(prefs.isLocked() ? "Position: LOCKED" : "Position: UNLOCKED");
+        lockBtn.setBackgroundColor(prefs.isLocked() ? Color.parseColor("#FFD700") : Color.parseColor("#333333"));
+        lockBtn.setTextColor(Color.BLACK);
+        lockBtn.setOnClickListener(v -> {
+            boolean newVal = !prefs.isLocked();
+            prefs.setLocked(newVal);
+            lockBtn.setText(newVal ? "Position: LOCKED" : "Position: UNLOCKED");
+            lockBtn.setBackgroundColor(newVal ? Color.parseColor("#FFD700") : Color.parseColor("#333333"));
+        });
+        main.addView(lockBtn);
+
         Button backBtn = new Button(this);
         backBtn.setText("< Back");
         backBtn.setBackgroundColor(Color.parseColor("#333333"));
