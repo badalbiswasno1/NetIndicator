@@ -33,10 +33,12 @@
 
         <activity 
             android:name=".SettingsActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
             android:screenOrientation="portrait" />
             
         <activity 
             android:name=".DataAnalyticsActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
             android:screenOrientation="portrait" />
 
         <service
