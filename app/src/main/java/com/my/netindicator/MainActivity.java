@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 });
-                handler.postDelayed(this, 1000);
+                handler.postDelayed(this, 3000);
             }
         };
         handler.post(updater);
@@ -276,8 +276,6 @@ public class MainActivity extends Activity {
     }
 
     private void updateUI() {
-        runOnUiThread(() -> loadingBar.setVisibility(View.VISIBLE));
-
         TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
 
         int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
@@ -332,7 +330,6 @@ public class MainActivity extends Activity {
                 }
 
                 updateHistory();
-                loadingBar.setVisibility(View.GONE);
                 swipeRefresh.setRefreshing(false);
             });
         }).start();
