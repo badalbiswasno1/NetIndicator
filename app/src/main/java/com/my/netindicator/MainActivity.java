@@ -155,13 +155,7 @@ public class MainActivity extends Activity {
         titleRow.setGravity(Gravity.CENTER_VERTICAL);
         titleRow.setPadding(0, 0, 0, 20);
 
-        TextView backArrow = new TextView(this);
-        backArrow.setText("←");
-        backArrow.setTextColor(Color.WHITE);
-        backArrow.setTextSize(28);
-        backArrow.setPadding(0, 0, 20, 0);
-        backArrow.setOnClickListener(v -> finish());
-        titleRow.addView(backArrow);
+
 
         TextView title = new TextView(this);
         title.setText(langManager.get("true_network"));
