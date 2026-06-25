@@ -19,11 +19,9 @@ import android.telephony.CellSignalStrengthNr;
 import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.graphics.Color;
 
@@ -48,8 +46,6 @@ public class MainActivity extends Activity {
     private Runnable updater;
     private long startTime;
     private NetworkLogger logger;
-    private SeekBar timeSeek;
-    private TextView tvTimeLabel;
     private LanguageManager langManager;
     private FloatingWindowPrefs windowPrefs;
 
@@ -112,7 +108,6 @@ public class MainActivity extends Activity {
         main.setGravity(Gravity.CENTER_HORIZONTAL);
         scroll.addView(main);
 
-        // Title
         TextView title = new TextView(this);
         title.setText(langManager.get("true_network"));
         title.setTextColor(Color.WHITE);
@@ -121,7 +116,6 @@ public class MainActivity extends Activity {
         title.setGravity(Gravity.CENTER);
         main.addView(title);
 
-        // Grade Display
         tvGrade = new TextView(this);
         tvGrade.setText("?.0G");
         tvGrade.setTextSize(64);
@@ -131,7 +125,6 @@ public class MainActivity extends Activity {
         tvGrade.setPadding(0, 20, 0, 10);
         main.addView(tvGrade);
 
-        // Ping
         tvPing = new TextView(this);
         tvPing.setText(langManager.get("ping") + ": -- ms");
         tvPing.setTextSize(18);
@@ -139,7 +132,6 @@ public class MainActivity extends Activity {
         tvPing.setTextColor(Color.WHITE);
         main.addView(tvPing);
 
-        // Signal dBm
         tvDbm = new TextView(this);
         tvDbm.setText(langManager.get("signal") + ": -- dBm");
         tvDbm.setTextSize(14);
@@ -147,7 +139,6 @@ public class MainActivity extends Activity {
         tvDbm.setTextColor(Color.parseColor("#AAAAAA"));
         main.addView(tvDbm);
 
-        // Operator
         tvSignal = new TextView(this);
         tvSignal.setText(langManager.get("operator") + ": --");
         tvSignal.setTextColor(Color.parseColor("#00CC44"));
@@ -156,7 +147,6 @@ public class MainActivity extends Activity {
         tvSignal.setPadding(0, 20, 0, 5);
         main.addView(tvSignal);
 
-        // Running time
         tvTime = new TextView(this);
         tvTime.setText(langManager.get("running") + ": 0s");
         tvTime.setTextColor(Color.parseColor("#AAAAAA"));
@@ -164,7 +154,6 @@ public class MainActivity extends Activity {
         tvTime.setGravity(Gravity.CENTER);
         main.addView(tvTime);
 
-        // Data usage
         tvData = new TextView(this);
         tvData.setText("0 MB");
         tvData.setTextColor(Color.parseColor("#FFD700"));
@@ -173,7 +162,6 @@ public class MainActivity extends Activity {
         tvData.setPadding(0, 5, 0, 20);
         main.addView(tvData);
 
-        // History Section
         TextView histTitle = new TextView(this);
         histTitle.setText(langManager.get("network_history"));
         histTitle.setTextColor(Color.parseColor("#FFD700"));
@@ -188,7 +176,6 @@ public class MainActivity extends Activity {
         tvHistory.setPadding(0, 10, 0, 10);
         main.addView(tvHistory);
 
-        // Buttons
         Button clearBtn = new Button(this);
         clearBtn.setText(langManager.get("clear_history"));
         clearBtn.setBackgroundColor(Color.parseColor("#E63329"));
@@ -219,7 +206,6 @@ public class MainActivity extends Activity {
     private void updateUI() {
         TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
 
-        // Get network type
         int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
         try {
             if (hasPermissions()) {
@@ -229,19 +215,19 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        // Display grade
-        String grade = getNetworkName(type) + ".0G";
-        tvGrade.setText(grade);
-        tvGrade.setTextColor(getNetworkColor(type));
+        // Signal strength in dBm
+        int signalDbm = getSignalDbm(tm);
 
-        // Operator
+        // Calculate exact grade based on network type + ping + signal
+        String grade = calculateExactGrade(type, signalDbm);
+        tvGrade.setText(grade);
+        tvGrade.setTextColor(getGradeColor(grade));
+
         tvSignal.setText(langManager.get("operator") + ": " + tm.getNetworkOperatorName());
 
-        // Running time
         long elapsed = (System.currentTimeMillis() - startTime) / 1000;
         tvTime.setText(langManager.get("running") + ": " + (elapsed / 60) + "m " + (elapsed % 60) + "s");
 
-        // Data usage
         try {
             long rx = android.net.TrafficStats.getMobileRxBytes();
             long tx = android.net.TrafficStats.getMobileTxBytes();
@@ -251,10 +237,8 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        // Signal Strength (dBm)
-        updateSignalInfo(tm);
+        updateSignalDisplay(tm, signalDbm);
 
-        // Ping (background thread)
         new Thread(() -> {
             long ping = measurePing();
             final String pingText = ping >= 0 ? ping + " ms" : "timeout";
@@ -265,8 +249,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 tvPing.setText(langManager.get("ping") + ": " + pingText);
                 tvPing.setTextColor(pingColor);
-                
-                // Log data
+
                 try {
                     long rx = android.net.TrafficStats.getMobileRxBytes();
                     long tx = android.net.TrafficStats.getMobileTxBytes();
@@ -275,13 +258,111 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                
+
                 updateHistory();
             });
         }).start();
     }
 
-    private void updateSignalInfo(TelephonyManager tm) {
+    // ============ EXACT GRADE CALCULATION (0.1 steps) ============
+    private String calculateExactGrade(int networkType, int signalDbm) {
+        double baseGrade = getBaseGrade(networkType);
+        
+        if (baseGrade <= 0) return "?.0G";
+        
+        // Signal quality adjustment (-100 dBm is good, -50 is excellent, -120 is poor)
+        double signalQuality = calculateSignalQuality(signalDbm);
+        
+        // Combine: base + signal quality (0.0 to 0.9 range)
+        double exactGrade = baseGrade + signalQuality;
+        
+        // Cap at next integer (e.g., 3.9 max for 3G, 4.9 max for 4G)
+        double maxGrade = baseGrade + 0.9;
+        if (exactGrade > maxGrade) exactGrade = maxGrade;
+        
+        // Format to 1 decimal place
+        return String.format("%.1fG", exactGrade);
+    }
+
+    private double getBaseGrade(int networkType) {
+        switch (networkType) {
+            case TelephonyManager.NETWORK_TYPE_GPRS:
+            case TelephonyManager.NETWORK_TYPE_EDGE: return 2.0;
+            case TelephonyManager.NETWORK_TYPE_UMTS:
+            case TelephonyManager.NETWORK_TYPE_HSDPA:
+            case TelephonyManager.NETWORK_TYPE_HSPA: return 3.0;
+            case TelephonyManager.NETWORK_TYPE_LTE: return 4.0;
+            case TelephonyManager.NETWORK_TYPE_NR: return 5.0;
+            default: return 0.0;
+        }
+    }
+
+    private double calculateSignalQuality(int signalDbm) {
+        // dBm ranges: -50 (excellent) to -120 (poor)
+        // Map to 0.0 - 0.9 range
+        
+        if (signalDbm == 0) return 0.0; // unknown
+        
+        // Clamp values
+        if (signalDbm > -50) signalDbm = -50;
+        if (signalDbm < -120) signalDbm = -120;
+        
+        // Normalize: -50 = 0.9, -120 = 0.0
+        double normalized = (double)(signalDbm + 120) / 70.0; // 0.0 to 1.0
+        double quality = normalized * 0.9; // 0.0 to 0.9
+        
+        return Math.round(quality * 10) / 10.0; // Round to 1 decimal
+    }
+
+    private int getGradeColor(String grade) {
+        if (grade.startsWith("5.")) return Color.parseColor("#00FF88");
+        if (grade.startsWith("4.")) {
+            double val = Double.parseDouble(grade.replace("G", ""));
+            if (val >= 4.7) return Color.parseColor("#00FF44");
+            if (val >= 4.4) return Color.parseColor("#00CC44");
+            if (val >= 4.1) return Color.parseColor("#66CC00");
+            return Color.parseColor("#99CC00");
+        }
+        if (grade.startsWith("3.")) {
+            double val = Double.parseDouble(grade.replace("G", ""));
+            if (val >= 3.7) return Color.parseColor("#FFD700");
+            if (val >= 3.4) return Color.parseColor("#FFAA00");
+            if (val >= 3.1) return Color.parseColor("#FF8800");
+            return Color.parseColor("#FF6600");
+        }
+        if (grade.startsWith("2.")) return Color.parseColor("#FF4400");
+        return Color.GRAY;
+    }
+
+    private int getSignalDbm(TelephonyManager tm) {
+        try {
+            if (!hasPermissions()) return 0;
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null || cells.isEmpty()) return 0;
+
+            for (CellInfo cell : cells) {
+                if (!cell.isRegistered()) continue;
+
+                if (cell instanceof CellInfoLte) {
+                    return ((CellInfoLte) cell).getCellSignalStrength().getDbm();
+                }
+                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    return ((CellInfoNr) cell).getCellSignalStrength().getSsRsrp();
+                }
+                if (cell instanceof CellInfoWcdma) {
+                    return ((CellInfoWcdma) cell).getCellSignalStrength().getDbm();
+                }
+                if (cell instanceof CellInfoGsm) {
+                    return ((CellInfoGsm) cell).getCellSignalStrength().getDbm();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    private void updateSignalDisplay(TelephonyManager tm, int signalDbm) {
         try {
             if (!hasPermissions()) {
                 tvDbm.setText(langManager.get("signal") + ": No permission");
@@ -299,65 +380,29 @@ public class MainActivity extends Activity {
 
                 if (cell instanceof CellInfoLte) {
                     CellSignalStrengthLte lte = ((CellInfoLte) cell).getCellSignalStrength();
-                    int dbm = lte.getDbm();
                     int rsrp = lte.getRsrp();
-                    tvDbm.setText("Signal: " + dbm + " dBm (RSRP: " + rsrp + ")");
+                    tvDbm.setText("Signal: " + signalDbm + " dBm (RSRP: " + rsrp + ")");
                     return;
                 }
-
                 if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
                     int ssRsrp = nr.getSsRsrp();
-                    tvDbm.setText("Signal: " + ssRsrp + " dBm (5G NR)");
+                    tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR SsRsrp: " + ssRsrp + ")");
                     return;
                 }
-
                 if (cell instanceof CellInfoWcdma) {
-                    CellSignalStrengthWcdma wcdma = ((CellInfoWcdma) cell).getCellSignalStrength();
-                    int dbm = wcdma.getDbm();
-                    tvDbm.setText("Signal: " + dbm + " dBm (3G)");
+                    tvDbm.setText("Signal: " + signalDbm + " dBm (3G)");
                     return;
                 }
-
                 if (cell instanceof CellInfoGsm) {
-                    CellSignalStrengthGsm gsm = ((CellInfoGsm) cell).getCellSignalStrength();
-                    int dbm = gsm.getDbm();
-                    tvDbm.setText("Signal: " + dbm + " dBm (2G)");
+                    tvDbm.setText("Signal: " + signalDbm + " dBm (2G)");
                     return;
                 }
             }
-
             tvDbm.setText(langManager.get("signal") + ": Unknown type");
-
         } catch (Exception e) {
             e.printStackTrace();
             tvDbm.setText(langManager.get("signal") + ": Error");
-        }
-    }
-
-    private String getNetworkName(int type) {
-        switch (type) {
-            case TelephonyManager.NETWORK_TYPE_NR: return "5";
-            case TelephonyManager.NETWORK_TYPE_LTE: return "4";
-            case TelephonyManager.NETWORK_TYPE_HSDPA:
-            case TelephonyManager.NETWORK_TYPE_HSPA:
-            case TelephonyManager.NETWORK_TYPE_UMTS: return "3";
-            case TelephonyManager.NETWORK_TYPE_EDGE:
-            case TelephonyManager.NETWORK_TYPE_GPRS: return "2";
-            default: return "?";
-        }
-    }
-
-    private int getNetworkColor(int type) {
-        switch (type) {
-            case TelephonyManager.NETWORK_TYPE_NR: return Color.parseColor("#00FF88");
-            case TelephonyManager.NETWORK_TYPE_LTE: return Color.parseColor("#00CC44");
-            case TelephonyManager.NETWORK_TYPE_HSDPA:
-            case TelephonyManager.NETWORK_TYPE_HSPA:
-            case TelephonyManager.NETWORK_TYPE_UMTS: return Color.parseColor("#FFD700");
-            case TelephonyManager.NETWORK_TYPE_EDGE:
-            case TelephonyManager.NETWORK_TYPE_GPRS: return Color.parseColor("#FF8800");
-            default: return Color.GRAY;
         }
     }
 
@@ -385,26 +430,26 @@ public class MainActivity extends Activity {
         try {
             JSONArray logs = logger.getLogs();
             StringBuilder sb = new StringBuilder();
-            sb.append("Time    Grade  Ping  Data\n");
-            sb.append("--------------------------\n");
-            
+            sb.append("Time    Grade   Ping  Data\n");
+            sb.append("---------------------------\n");
+
             int count = 0;
             for (int i = logs.length() - 1; i >= 0 && count < 10; i--) {
                 JSONObject obj = logs.getJSONObject(i);
                 sb.append(obj.getString("time").substring(0, 8)).append(" ")
-                  .append(obj.getString("grade")).append(" ")
+                  .append(String.format("%-6s", obj.getString("grade"))).append(" ")
                   .append(obj.getLong("ping")).append("ms ")
                   .append(obj.getLong("data")).append("KB\n");
                 count++;
             }
-            
+
             if (count == 0) {
                 sb.append(langManager.get("no_data"));
             }
-            
+
             tvHistory.setText(sb.toString());
         } catch (Exception e) {
-            tvHistory.setText("Error");
+            tvHistory.setText("Error loading history");
         }
     }
 

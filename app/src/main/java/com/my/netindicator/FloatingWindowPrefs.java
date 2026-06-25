@@ -3,79 +3,84 @@ package com.my.netindicator;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.view.Gravity;
 
 public class FloatingWindowPrefs {
-    private static final String PREFS_NAME = "FloatingWindowPrefs";
-    private static final String KEY_VISIBLE = "visible";
-    private static final String KEY_TEXT_COLOR = "text_color";
-    private static final String KEY_BG_COLOR = "bg_color";
-    private static final String KEY_TRANSPARENCY = "transparency";
-    private static final String KEY_SIZE = "size";
-    private static final String KEY_POSITION = "position";
-    
     private SharedPreferences prefs;
-    
-    public FloatingWindowPrefs(Context context) {
-        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+    public FloatingWindowPrefs(Context ctx) {
+        prefs = ctx.getSharedPreferences("floating_prefs", Context.MODE_PRIVATE);
     }
-    
+
     public boolean isVisible() {
-        return prefs.getBoolean(KEY_VISIBLE, true);
+        return prefs.getBoolean("visible", true);
     }
-    
+
     public void setVisible(boolean visible) {
-        prefs.edit().putBoolean(KEY_VISIBLE, visible).apply();
+        prefs.edit().putBoolean("visible", visible).apply();
     }
-    
-    public int getTextColor() {
-        return prefs.getInt(KEY_TEXT_COLOR, Color.parseColor("#00CC44"));
-    }
-    
-    public void setTextColor(int color) {
-        prefs.edit().putInt(KEY_TEXT_COLOR, color).apply();
-    }
-    
-    public int getBackgroundColor() {
-        return prefs.getInt(KEY_BG_COLOR, Color.parseColor("#CC000000"));
-    }
-    
-    public void setBackgroundColor(int color) {
-        prefs.edit().putInt(KEY_BG_COLOR, color).apply();
-    }
-    
-    public int getTransparency() {
-        return prefs.getInt(KEY_TRANSPARENCY, 0);
-    }
-    
-    public void setTransparency(int transparency) {
-        prefs.edit().putInt(KEY_TRANSPARENCY, transparency).apply();
-    }
-    
-    public int getSize() {
-        return prefs.getInt(KEY_SIZE, 14);
-    }
-    
-    public void setSize(int size) {
-        prefs.edit().putInt(KEY_SIZE, size).apply();
-    }
-    
-    public String getPosition() {
-        return prefs.getString(KEY_POSITION, "Top-Right");
-    }
-    
-    public void setPosition(String position) {
-        prefs.edit().putString(KEY_POSITION, position).apply();
-    }
-    
+
     public int getGravity() {
-        String pos = getPosition();
-        switch (pos) {
-            case "Top-Left": return android.view.Gravity.TOP | android.view.Gravity.START;
-            case "Top-Right": return android.view.Gravity.TOP | android.view.Gravity.END;
-            case "Bottom-Left": return android.view.Gravity.BOTTOM | android.view.Gravity.START;
-            case "Bottom-Right": return android.view.Gravity.BOTTOM | android.view.Gravity.END;
-            case "Center": return android.view.Gravity.CENTER;
-            default: return android.view.Gravity.TOP | android.view.Gravity.END;
-        }
+        return prefs.getInt("gravity", Gravity.TOP | Gravity.END);
+    }
+
+    public void setGravity(int gravity) {
+        prefs.edit().putInt("gravity", gravity).apply();
+    }
+
+    public int getX() {
+        return prefs.getInt("pos_x", 20);
+    }
+
+    public void setX(int x) {
+        prefs.edit().putInt("pos_x", x).apply();
+    }
+
+    public int getY() {
+        return prefs.getInt("pos_y", 100);
+    }
+
+    public void setY(int y) {
+        prefs.edit().putInt("pos_y", y).apply();
+    }
+
+    public float getSize() {
+        return prefs.getFloat("size", 16f);
+    }
+
+    public void setSize(float size) {
+        prefs.edit().putFloat("size", size).apply();
+    }
+
+    public int getTransparency() {
+        return prefs.getInt("transparency", 30);
+    }
+
+    public void setTransparency(int transparency) {
+        prefs.edit().putInt("transparency", transparency).apply();
+    }
+
+    public int getTextColor() {
+        return prefs.getInt("text_color", Color.parseColor("#00CC44"));
+    }
+
+    public void setTextColor(int color) {
+        prefs.edit().putInt("text_color", color).apply();
+    }
+
+    public int getBackgroundColor() {
+        return prefs.getInt("bg_color", Color.BLACK);
+    }
+
+    public void setBackgroundColor(int color) {
+        prefs.edit().putInt("bg_color", color).apply();
+    }
+
+    public int getRefreshInterval() {
+        return prefs.getInt("refresh_interval", 3000);
+    }
+
+    public void setRefreshInterval(int interval) {
+        prefs.edit().putInt("refresh_interval", interval).apply();
     }
 }

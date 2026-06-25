@@ -11,12 +11,26 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.telephony.CellInfo;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
+import android.telephony.CellInfoNr;
+import android.telephony.CellInfoWcdma;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthLte;
+import android.telephony.CellSignalStrengthNr;
+import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.graphics.Color;
 
 import androidx.core.app.NotificationCompat;
+
+import java.util.List;
 
 public class FloatingService extends Service {
     private WindowManager windowManager;
@@ -29,7 +43,7 @@ public class FloatingService extends Service {
     public void onCreate() {
         super.onCreate();
         prefs = new FloatingWindowPrefs(this);
-        
+
         if (prefs.isVisible()) {
             startForeground(1, createNotification());
             createFloatingView();
@@ -68,24 +82,53 @@ public class FloatingService extends Service {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                         : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE 
-                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = prefs.getGravity();
-        params.x = 20;
-        params.y = 100;
+        params.x = prefs.getX();
+        params.y = prefs.getY();
 
         floatingView = new TextView(this);
         floatingView.setTextSize(prefs.getSize());
         floatingView.setTextColor(prefs.getTextColor());
-        
-        // Background with transparency
+
         int bgColor = prefs.getBackgroundColor();
         int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
         int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
         floatingView.setBackgroundColor(finalBg);
         floatingView.setPadding(20, 10, 20, 10);
+
+        // Draggable floating window
+        floatingView.setOnTouchListener(new View.OnTouchListener() {
+            private int initialX;
+            private int initialY;
+            private float initialTouchX;
+            private float initialTouchY;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = params.x;
+                        initialY = params.y;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        params.x = initialX + (int)(event.getRawX() - initialTouchX);
+                        params.y = initialY + (int)(event.getRawY() - initialTouchY);
+                        windowManager.updateViewLayout(floatingView, params);
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        // Save position
+                        prefs.setX(params.x);
+                        prefs.setY(params.y);
+                        return true;
+                }
+                return false;
+            }
+        });
 
         try {
             windowManager.addView(floatingView, params);
@@ -97,7 +140,7 @@ public class FloatingService extends Service {
             @Override
             public void run() {
                 updateFloatingNetwork();
-                handler.postDelayed(this, 3000);
+                handler.postDelayed(this, prefs.getRefreshInterval());
             }
         };
         handler.post(updater);
@@ -107,35 +150,86 @@ public class FloatingService extends Service {
         try {
             TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
             int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
-            
+
             try {
-                if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) 
+                if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE)
                         == PackageManager.PERMISSION_GRANTED) {
                     type = tm.getDataNetworkType();
                 }
             } catch (SecurityException e) {
                 e.printStackTrace();
             }
-            
-            String grade = getNetworkName(type) + ".0G";
+
+            // Get signal for exact grade
+            int signalDbm = getSignalDbm(tm);
+            String grade = calculateExactGrade(type, signalDbm);
             floatingView.setText(grade);
-            
+
+            // Update from prefs
+            floatingView.setTextColor(prefs.getTextColor());
+            int bgColor = prefs.getBackgroundColor();
+            int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
+            int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
+            floatingView.setBackgroundColor(finalBg);
+            floatingView.setTextSize(prefs.getSize());
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private String getNetworkName(int type) {
-        switch (type) {
-            case TelephonyManager.NETWORK_TYPE_NR: return "5";
-            case TelephonyManager.NETWORK_TYPE_LTE: return "4";
-            case TelephonyManager.NETWORK_TYPE_HSDPA:
-            case TelephonyManager.NETWORK_TYPE_HSPA:
-            case TelephonyManager.NETWORK_TYPE_UMTS: return "3";
-            case TelephonyManager.NETWORK_TYPE_EDGE:
-            case TelephonyManager.NETWORK_TYPE_GPRS: return "2";
-            default: return "?";
+    private int getSignalDbm(TelephonyManager tm) {
+        try {
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null) return 0;
+            for (CellInfo cell : cells) {
+                if (!cell.isRegistered()) continue;
+                if (cell instanceof CellInfoLte) {
+                    return ((CellInfoLte) cell).getCellSignalStrength().getDbm();
+                }
+                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    return ((CellInfoNr) cell).getCellSignalStrength().getSsRsrp();
+                }
+                if (cell instanceof CellInfoWcdma) {
+                    return ((CellInfoWcdma) cell).getCellSignalStrength().getDbm();
+                }
+                if (cell instanceof CellInfoGsm) {
+                    return ((CellInfoGsm) cell).getCellSignalStrength().getDbm();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+        return 0;
+    }
+
+    private String calculateExactGrade(int networkType, int signalDbm) {
+        double baseGrade;
+        switch (networkType) {
+            case TelephonyManager.NETWORK_TYPE_GPRS:
+            case TelephonyManager.NETWORK_TYPE_EDGE: baseGrade = 2.0; break;
+            case TelephonyManager.NETWORK_TYPE_UMTS:
+            case TelephonyManager.NETWORK_TYPE_HSDPA:
+            case TelephonyManager.NETWORK_TYPE_HSPA: baseGrade = 3.0; break;
+            case TelephonyManager.NETWORK_TYPE_LTE: baseGrade = 4.0; break;
+            case TelephonyManager.NETWORK_TYPE_NR: baseGrade = 5.0; break;
+            default: return "?.0G";
+        }
+
+        if (signalDbm == 0) return String.format("%.1fG", baseGrade);
+
+        if (signalDbm > -50) signalDbm = -50;
+        if (signalDbm < -120) signalDbm = -120;
+
+        double normalized = (double)(signalDbm + 120) / 70.0;
+        double quality = normalized * 0.9;
+        quality = Math.round(quality * 10) / 10.0;
+
+        double exactGrade = baseGrade + quality;
+        double maxGrade = baseGrade + 0.9;
+        if (exactGrade > maxGrade) exactGrade = maxGrade;
+
+        return String.format("%.1fG", exactGrade);
     }
 
     @Override
