@@ -152,7 +152,7 @@ public class FloatingSettingsActivity extends Activity {
         main.addView(bgSpinner);
 
         Button backBtn = new Button(this);
-        backBtn.setText("← Back");
+        backBtn.setText("< Back");
         backBtn.setBackgroundColor(Color.parseColor("#333333"));
         backBtn.setTextColor(Color.WHITE);
         backBtn.setOnClickListener(v -> finish());
