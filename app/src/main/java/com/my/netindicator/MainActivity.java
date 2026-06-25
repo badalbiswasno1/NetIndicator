@@ -87,12 +87,13 @@ public class MainActivity extends Activity {
 
         updater = new Runnable() {
             public void run() {
-                try {
-                    updateUI();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                new Thread(() -> {
+                    try {
+                        updateUI();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }).start();
             }
         };
         handler.post(updater);
