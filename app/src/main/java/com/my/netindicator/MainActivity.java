@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 });
-                handler.postDelayed(this, 30000);
+                handler.postDelayed(this, 1000);
             }
         };
         handler.post(updater);
@@ -493,7 +493,7 @@ public class MainActivity extends Activity {
             sb.append("Time    Grade   Ping  Data\n");
             sb.append("---------------------------\n");
             int count = 0;
-            for (int i = logs.length() - 1; i >= 0 && count < 10; i--) {
+            for (int i = logs.length() - 1; i >= 0 && count < 15; i--) {
                 JSONObject obj = logs.getJSONObject(i);
                 sb.append(obj.getString("time").substring(0, 8)).append(" ")
                   .append(String.format("%-6s", obj.getString("grade"))).append(" ")
