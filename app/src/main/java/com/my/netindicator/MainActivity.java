@@ -333,6 +333,7 @@ public class MainActivity extends Activity {
 
                 updateHistory();
                 loadingBar.setVisibility(View.GONE);
+                swipeRefresh.setRefreshing(false);
             });
         }).start();
     }
