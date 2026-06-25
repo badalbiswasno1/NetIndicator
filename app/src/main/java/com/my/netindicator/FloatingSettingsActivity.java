@@ -1,6 +1,7 @@
 package com.my.netindicator;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -13,7 +14,6 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class FloatingSettingsActivity extends Activity {
     private FloatingWindowPrefs prefs;
@@ -43,110 +43,76 @@ public class FloatingSettingsActivity extends Activity {
         title.setPadding(0, 0, 0, 30);
         main.addView(title);
 
-        // Toggle
         Button toggleBtn = new Button(this);
         toggleBtn.setText(prefs.isVisible() ? "Floating: ON" : "Floating: OFF");
-        toggleBtn.setBackgroundColor(prefs.isVisible() ?
-            Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+        toggleBtn.setBackgroundColor(prefs.isVisible() ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
         toggleBtn.setTextColor(Color.WHITE);
         toggleBtn.setOnClickListener(v -> {
             boolean newVal = !prefs.isVisible();
             prefs.setVisible(newVal);
             toggleBtn.setText(newVal ? "Floating: ON" : "Floating: OFF");
-            toggleBtn.setBackgroundColor(newVal ?
-                Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+            toggleBtn.setBackgroundColor(newVal ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
         });
         main.addView(toggleBtn);
 
-        // Position
         addLabel(main, "Position");
         String[] positions = {"Top Right", "Top Left", "Bottom Right", "Bottom Left"};
-        final int[] gravities = {
-            Gravity.TOP | Gravity.END,
-            Gravity.TOP | Gravity.START,
-            Gravity.BOTTOM | Gravity.END,
-            Gravity.BOTTOM | Gravity.START
-        };
+        final int[] gravities = {Gravity.TOP | Gravity.END, Gravity.TOP | Gravity.START, Gravity.BOTTOM | Gravity.END, Gravity.BOTTOM | Gravity.START};
         Spinner posSpinner = new Spinner(this);
-        ArrayAdapter<String> posAdapter = new ArrayAdapter<>(this,
-            android.R.layout.simple_spinner_item, positions);
+        ArrayAdapter<String> posAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, positions);
         posSpinner.setAdapter(posAdapter);
         int currentGravity = prefs.getGravity();
         for (int i = 0; i < gravities.length; i++) {
             if (gravities[i] == currentGravity) posSpinner.setSelection(i);
         }
         posSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                prefs.setGravity(gravities[pos]);
-            }
+            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) { prefs.setGravity(gravities[pos]); }
             public void onNothingSelected(AdapterView<?> p) {}
         });
         main.addView(posSpinner);
 
-        // Text Size
         final TextView sizeLabel = addLabel(main, "Text Size: " + (int)prefs.getSize());
         SeekBar sizeSeek = new SeekBar(this);
         sizeSeek.setMax(40);
         sizeSeek.setProgress((int)prefs.getSize() - 10);
         sizeSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            public void onProgressChanged(SeekBar sb, int p, boolean u) {
-                prefs.setSize(p + 10);
-                sizeLabel.setText("Text Size: " + (p + 10));
-            }
+            public void onProgressChanged(SeekBar sb, int p, boolean u) { prefs.setSize(p + 10); sizeLabel.setText("Text Size: " + (p + 10)); }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}
         });
         main.addView(sizeSeek);
 
-        // Transparency
         final TextView transLabel = addLabel(main, "Transparency: " + prefs.getTransparency() + "%");
         SeekBar transSeek = new SeekBar(this);
         transSeek.setMax(100);
         transSeek.setProgress(prefs.getTransparency());
         transSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            public void onProgressChanged(SeekBar sb, int p, boolean u) {
-                prefs.setTransparency(p);
-                transLabel.setText("Transparency: " + p + "%");
-            }
+            public void onProgressChanged(SeekBar sb, int p, boolean u) { prefs.setTransparency(p); transLabel.setText("Transparency: " + p + "%"); }
             public void onStartTrackingTouch(SeekBar sb) {}
             public void onStopTrackingTouch(SeekBar sb) {}
         });
         main.addView(transSeek);
 
-        // Text Color
         addLabel(main, "Text Color");
         String[] textColors = {"Green", "White", "Yellow", "Cyan"};
-        final int[] textColorValues = {
-            Color.parseColor("#00CC44"), Color.WHITE,
-            Color.parseColor("#FFD700"), Color.CYAN
-        };
+        final int[] textColorValues = {Color.parseColor("#00CC44"), Color.WHITE, Color.parseColor("#FFD700"), Color.CYAN};
         Spinner tcSpinner = new Spinner(this);
-        ArrayAdapter<String> tcAdapter = new ArrayAdapter<>(this,
-            android.R.layout.simple_spinner_item, textColors);
+        ArrayAdapter<String> tcAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, textColors);
         tcSpinner.setAdapter(tcAdapter);
         tcSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                prefs.setTextColor(textColorValues[pos]);
-            }
+            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) { prefs.setTextColor(textColorValues[pos]); }
             public void onNothingSelected(AdapterView<?> p) {}
         });
         main.addView(tcSpinner);
 
-        // Background Color
         addLabel(main, "Background Color");
         String[] bgColors = {"Black", "Dark Gray", "Blue", "Transparent"};
-        final int[] bgColorValues = {
-            Color.BLACK, Color.parseColor("#333333"),
-            Color.parseColor("#003366"), Color.TRANSPARENT
-        };
+        final int[] bgColorValues = {Color.BLACK, Color.parseColor("#333333"), Color.parseColor("#003366"), Color.TRANSPARENT};
         Spinner bgSpinner = new Spinner(this);
-        ArrayAdapter<String> bgAdapter = new ArrayAdapter<>(this,
-            android.R.layout.simple_spinner_item, bgColors);
+        ArrayAdapter<String> bgAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, bgColors);
         bgSpinner.setAdapter(bgAdapter);
         bgSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
-                prefs.setBackgroundColor(bgColorValues[pos]);
-            }
+            public void onItemSelected(AdapterView<?> p, View v, int pos, long id) { prefs.setBackgroundColor(bgColorValues[pos]); }
             public void onNothingSelected(AdapterView<?> p) {}
         });
         main.addView(bgSpinner);

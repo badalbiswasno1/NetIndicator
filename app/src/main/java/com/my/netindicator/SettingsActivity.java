@@ -30,52 +30,32 @@ public class SettingsActivity extends Activity {
         main.setPadding(40, 60, 40, 40);
         scroll.addView(main);
 
-        // Title
         TextView title = new TextView(this);
-        title.setText("⚙ " + langManager.get("settings"));
+        title.setText("Settings");
         title.setTextColor(Color.WHITE);
         title.setTextSize(24);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setPadding(0, 0, 0, 40);
+        title.setPadding(0, 0, 0, 30);
         main.addView(title);
 
-        // Language folder button
-        Button langBtn = new Button(this);
-        langBtn.setText("🌐  " + langManager.get("language") + "  ›");
-        langBtn.setBackgroundColor(Color.parseColor("#222222"));
-        langBtn.setTextColor(Color.WHITE);
-        langBtn.setTextSize(16);
-        langBtn.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        langBtn.setPadding(30, 20, 30, 20);
-        langBtn.setOnClickListener(v -> startActivity(new Intent(this, LanguageActivity.class)));
-        main.addView(langBtn);
+        addMenuItem(main, "🌐", langManager.get("language"), LanguageActivity.class);
+        addMenuItem(main, "📱", "Floating Window", FloatingSettingsActivity.class);
+        addMenuItem(main, "🌐", "Ping Server", PingServerActivity.class);
+        addMenuItem(main, "📊", "History Limit", HistoryLimitActivity.class);
+        addMenuItem(main, "🎨", "Theme", ThemeActivity.class);
+        addMenuItem(main, "🔔", "Notification", NotificationSettingsActivity.class);
+        addMenuItem(main, "🚀", "Auto Start", AutoStartActivity.class);
+        addMenuItem(main, "💾", "Export Data", ExportActivity.class);
 
-        // Divider
-        addDivider(main);
-
-        // Floating Window folder button
-        Button floatBtn = new Button(this);
-        floatBtn.setText("📱  Floating Window  ›");
-        floatBtn.setBackgroundColor(Color.parseColor("#222222"));
-        floatBtn.setTextColor(Color.WHITE);
-        floatBtn.setTextSize(16);
-        floatBtn.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        floatBtn.setPadding(30, 20, 30, 20);
-        floatBtn.setOnClickListener(v -> startActivity(new Intent(this, FloatingSettingsActivity.class)));
-        main.addView(floatBtn);
-
-        addDivider(main);
-
-        // About
         TextView about = new TextView(this);
-        about.setText("True Network v3.0\nDeveloped by: Badal Biswas");
+        about.setText("True Network v3.0
+Developed by: Badal Biswas");
         about.setTextColor(Color.parseColor("#AAAAAA"));
         about.setTextSize(13);
         about.setGravity(Gravity.CENTER);
-        about.setPadding(0, 40, 0, 0);
+        about.setPadding(0, 40, 0, 10);
         main.addView(about);
 
-        // Back button
         Button backBtn = new Button(this);
         backBtn.setText("< Back");
         backBtn.setBackgroundColor(Color.parseColor("#333333"));
@@ -86,13 +66,21 @@ public class SettingsActivity extends Activity {
         setContentView(scroll);
     }
 
-    private void addDivider(LinearLayout parent) {
-        TextView divider = new TextView(this);
-        divider.setBackgroundColor(Color.parseColor("#333333"));
+    private void addMenuItem(LinearLayout parent, String icon, String label, Class<?> target) {
+        Button btn = new Button(this);
+        btn.setText(icon + "  " + label + "  >");
+        btn.setBackgroundColor(Color.parseColor("#1A1A1A"));
+        btn.setTextColor(Color.WHITE);
+        btn.setTextSize(15);
+        btn.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+        btn.setPadding(30, 25, 30, 25);
+        btn.setOnClickListener(v -> startActivity(new Intent(this, target)));
+
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 1);
-        params.setMargins(0, 5, 0, 5);
-        divider.setLayoutParams(params);
-        parent.addView(divider);
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, 4, 0, 4);
+        btn.setLayoutParams(params);
+        parent.addView(btn);
     }
 }

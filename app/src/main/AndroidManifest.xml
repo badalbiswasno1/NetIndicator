@@ -44,6 +44,12 @@
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:screenOrientation="portrait" />
 
+        <activity android:name=".PingServerActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".HistoryLimitActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".ThemeActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".NotificationSettingsActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".AutoStartActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".ExportActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
         <service
             android:name=".FloatingService"
             android:foregroundServiceType="dataSync"
