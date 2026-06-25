@@ -275,22 +275,66 @@ public class MainActivity extends Activity {
     }
 
     private void updateUI() {
+        runOnUiThread(() -> loadingBar.setVisibility(View.VISIBLE));
+
+        TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
+
+        int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
         try {
-            TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-            tvSignal.setText("Operator: " + tm.getNetworkOperatorName());
-            long elapsed = (System.currentTimeMillis() - startTime) / 1000;
-            tvTime.setText("Running: " + (elapsed/60) + "m " + (elapsed%60) + "s");
-            tvGrade.setText("4.0G");
-            tvPing.setText("Ping: --");
-            tvDbm.setText("Signal: --");
-            tvData.setText("Data: --");
-            loadingBar.setVisibility(android.view.View.GONE);
-            swipeRefresh.setRefreshing(false);
+            if (hasPermissions()) {
+                type = tm.getDataNetworkType();
+            }
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+
+        int signalDbm = getSignalDbm(tm);
+
+        String grade = calculateExactGrade(type, signalDbm);
+        tvGrade.setText(grade);
+        tvGrade.setTextColor(getGradeColor(grade));
+
+        tvSignal.setText(langManager.get("operator") + ": " + tm.getNetworkOperatorName());
+
+        long elapsed = (System.currentTimeMillis() - startTime) / 1000;
+        tvTime.setText(langManager.get("running") + ": " + (elapsed / 60) + "m " + (elapsed % 60) + "s");
+
+        try {
+            long rx = android.net.TrafficStats.getMobileRxBytes();
+            long tx = android.net.TrafficStats.getMobileTxBytes();
+            long totalKB = (rx + tx) / 1024;
+            tvData.setText(totalKB > 1024 ? (totalKB / 1024) + " MB" : totalKB + " KB");
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
 
+        updateSignalDisplay(tm, signalDbm);
+
+        new Thread(() -> {
+            long ping = measurePing();
+            final String pingText = ping >= 0 ? ping + " ms" : "timeout";
+            final int pingColor = ping < 0 ? Color.RED :
+                    ping < 100 ? Color.parseColor("#00CC44") :
+                    ping < 300 ? Color.parseColor("#FFD700") : Color.parseColor("#E63329");
+
+            runOnUiThread(() -> {
+                tvPing.setText(langManager.get("ping") + ": " + pingText);
+                tvPing.setTextColor(pingColor);
+
+                try {
+                    long rx = android.net.TrafficStats.getMobileRxBytes();
+                    long tx = android.net.TrafficStats.getMobileTxBytes();
+                    long dataKB = (rx + tx) / 1024;
+                    logger.log(grade, ping, dataKB);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                updateHistory();
+                loadingBar.setVisibility(View.GONE);
+            });
+        }).start();
+    }
 
     // ============ EXACT GRADE CALCULATION ============
     private String calculateExactGrade(int networkType, int signalDbm) {
