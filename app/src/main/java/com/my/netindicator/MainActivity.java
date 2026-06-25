@@ -187,14 +187,14 @@ public class MainActivity extends Activity {
         main.addView(clearBtn);
 
         Button analyticsBtn = new Button(this);
-        analyticsBtn.setText("📊 " + langManager.get("data_analytics"));
+        analyticsBtn.setText("\uD83D\uDCCA " + langManager.get("data_analytics"));
         analyticsBtn.setBackgroundColor(Color.parseColor("#0099FF"));
         analyticsBtn.setTextColor(Color.WHITE);
         analyticsBtn.setOnClickListener(v -> startActivity(new Intent(this, DataAnalyticsActivity.class)));
         main.addView(analyticsBtn);
 
         Button settingsBtn = new Button(this);
-        settingsBtn.setText("⚙ " + langManager.get("settings"));
+        settingsBtn.setText("\u2699 " + langManager.get("settings"));
         settingsBtn.setBackgroundColor(Color.parseColor("#333333"));
         settingsBtn.setTextColor(Color.WHITE);
         settingsBtn.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
@@ -215,10 +215,8 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        // Signal strength in dBm
         int signalDbm = getSignalDbm(tm);
 
-        // Calculate exact grade based on network type + ping + signal
         String grade = calculateExactGrade(type, signalDbm);
         tvGrade.setText(grade);
         tvGrade.setTextColor(getGradeColor(grade));
@@ -270,17 +268,12 @@ public class MainActivity extends Activity {
         
         if (baseGrade <= 0) return "?.0G";
         
-        // Signal quality adjustment (-100 dBm is good, -50 is excellent, -120 is poor)
         double signalQuality = calculateSignalQuality(signalDbm);
         
-        // Combine: base + signal quality (0.0 to 0.9 range)
         double exactGrade = baseGrade + signalQuality;
-        
-        // Cap at next integer (e.g., 3.9 max for 3G, 4.9 max for 4G)
         double maxGrade = baseGrade + 0.9;
         if (exactGrade > maxGrade) exactGrade = maxGrade;
         
-        // Format to 1 decimal place
         return String.format("%.1fG", exactGrade);
     }
 
@@ -298,20 +291,15 @@ public class MainActivity extends Activity {
     }
 
     private double calculateSignalQuality(int signalDbm) {
-        // dBm ranges: -50 (excellent) to -120 (poor)
-        // Map to 0.0 - 0.9 range
+        if (signalDbm == 0) return 0.0;
         
-        if (signalDbm == 0) return 0.0; // unknown
-        
-        // Clamp values
         if (signalDbm > -50) signalDbm = -50;
         if (signalDbm < -120) signalDbm = -120;
         
-        // Normalize: -50 = 0.9, -120 = 0.0
-        double normalized = (double)(signalDbm + 120) / 70.0; // 0.0 to 1.0
-        double quality = normalized * 0.9; // 0.0 to 0.9
+        double normalized = (double)(signalDbm + 120) / 70.0;
+        double quality = normalized * 0.9;
         
-        return Math.round(quality * 10) / 10.0; // Round to 1 decimal
+        return Math.round(quality * 10) / 10.0;
     }
 
     private int getGradeColor(String grade) {
@@ -346,8 +334,21 @@ public class MainActivity extends Activity {
                 if (cell instanceof CellInfoLte) {
                     return ((CellInfoLte) cell).getCellSignalStrength().getDbm();
                 }
-                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    return ((CellInfoNr) cell).getCellSignalStrength().getSsRsrp();
+                if (cell instanceof CellInfoNr) {
+                    // API 30+ has getSsRsrp(), fallback to getDbm() for older
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            try {
+                                return nr.getSsRsrp();
+                            } catch (Exception e) {
+                                return nr.getDbm();
+                            }
+                        } else {
+                            return nr.getDbm();
+                        }
+                    }
+                    return 0;
                 }
                 if (cell instanceof CellInfoWcdma) {
                     return ((CellInfoWcdma) cell).getCellSignalStrength().getDbm();
@@ -384,10 +385,23 @@ public class MainActivity extends Activity {
                     tvDbm.setText("Signal: " + signalDbm + " dBm (RSRP: " + rsrp + ")");
                     return;
                 }
-                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
-                    int ssRsrp = nr.getSsRsrp();
-                    tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR SsRsrp: " + ssRsrp + ")");
+                if (cell instanceof CellInfoNr) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                        int ssRsrp = 0;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            try {
+                                ssRsrp = nr.getSsRsrp();
+                            } catch (Exception e) {
+                                ssRsrp = nr.getDbm();
+                            }
+                        } else {
+                            ssRsrp = nr.getDbm();
+                        }
+                        tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR SsRsrp: " + ssRsrp + ")");
+                    } else {
+                        tvDbm.setText("Signal: " + signalDbm + " dBm (5G NR)");
+                    }
                     return;
                 }
                 if (cell instanceof CellInfoWcdma) {

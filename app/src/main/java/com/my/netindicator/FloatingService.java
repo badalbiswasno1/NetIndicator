@@ -121,7 +121,6 @@ public class FloatingService extends Service {
                         windowManager.updateViewLayout(floatingView, params);
                         return true;
                     case MotionEvent.ACTION_UP:
-                        // Save position
                         prefs.setX(params.x);
                         prefs.setY(params.y);
                         return true;
@@ -160,12 +159,10 @@ public class FloatingService extends Service {
                 e.printStackTrace();
             }
 
-            // Get signal for exact grade
             int signalDbm = getSignalDbm(tm);
             String grade = calculateExactGrade(type, signalDbm);
             floatingView.setText(grade);
 
-            // Update from prefs
             floatingView.setTextColor(prefs.getTextColor());
             int bgColor = prefs.getBackgroundColor();
             int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
@@ -187,8 +184,20 @@ public class FloatingService extends Service {
                 if (cell instanceof CellInfoLte) {
                     return ((CellInfoLte) cell).getCellSignalStrength().getDbm();
                 }
-                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    return ((CellInfoNr) cell).getCellSignalStrength().getSsRsrp();
+                if (cell instanceof CellInfoNr) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            try {
+                                return nr.getSsRsrp();
+                            } catch (Exception e) {
+                                return nr.getDbm();
+                            }
+                        } else {
+                            return nr.getDbm();
+                        }
+                    }
+                    return 0;
                 }
                 if (cell instanceof CellInfoWcdma) {
                     return ((CellInfoWcdma) cell).getCellSignalStrength().getDbm();
