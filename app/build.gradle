@@ -1,19 +1,19 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.application' version '8.2.2'
 }
 
 android {
     namespace 'com.my.netindicator'
-    compileSdk 33
-    
+    compileSdk 34
+
     defaultConfig {
         applicationId "com.my.netindicator"
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0"
     }
-    
+
     buildTypes {
         release {
             minifyEnabled false
@@ -27,5 +27,6 @@ android {
 }
 
 dependencies {
-    // No dependencies - pure Android SDK
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core:1.12.0'
 }
