@@ -12,7 +12,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,15 +83,18 @@ public class SettingsActivity extends Activity {
         // ===== FLOATING WINDOW SECTION =====
         addSectionTitle(main, "📱 Floating Window");
 
-        Switch floatSwitch = new Switch(this);
-        floatSwitch.setText("Show Floating Window");
-        floatSwitch.setTextColor(Color.WHITE);
-        floatSwitch.setChecked(prefs.isVisible());
-        floatSwitch.setOnCheckedChangeListener((btn, checked) -> {
-            prefs.setVisible(checked);
-            Toast.makeText(this, checked ? "Floating ON" : "Floating OFF", Toast.LENGTH_SHORT).show();
+        Button floatBtn = new Button(this);
+        floatBtn.setText(prefs.isVisible() ? "Floating: ON" : "Floating: OFF");
+        floatBtn.setBackgroundColor(prefs.isVisible() ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+        floatBtn.setTextColor(Color.WHITE);
+        floatBtn.setOnClickListener(v -> {
+            boolean newVal = !prefs.isVisible();
+            prefs.setVisible(newVal);
+            floatBtn.setText(newVal ? "Floating: ON" : "Floating: OFF");
+            floatBtn.setBackgroundColor(newVal ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+            Toast.makeText(this, newVal ? "Floating ON" : "Floating OFF", Toast.LENGTH_SHORT).show();
         });
-        main.addView(floatSwitch);
+        main.addView(floatBtn);
 
         addLabel(main, "Position");
         String[] positions = {"Top Right", "Top Left", "Bottom Right", "Bottom Left"};
