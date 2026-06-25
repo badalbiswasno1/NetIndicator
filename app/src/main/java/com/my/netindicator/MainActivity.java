@@ -8,6 +8,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.telephony.CellInfo;
+import android.telephony.CellInfoGsm;
+import android.telephony.CellInfoLte;
+import android.telephony.CellInfoNr;
+import android.telephony.CellInfoWcdma;
+import android.telephony.CellSignalStrengthGsm;
+import android.telephony.CellSignalStrengthLte;
+import android.telephony.CellSignalStrengthNr;
+import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
 import android.view.View;
@@ -23,6 +32,8 @@ import androidx.core.content.ContextCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.List;
 
 public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST_CODE = 100;
@@ -56,16 +67,15 @@ public class MainActivity extends Activity {
 
         buildUI();
 
-        // Start floating window if visible
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (Settings.canDrawOverlays(this)) {
-                if (windowPrefs.isVisible()) {
-                    startService(new Intent(this, FloatingService.class));
-                }
-            } else {
+            if (!Settings.canDrawOverlays(this)) {
                 Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                         Uri.parse("package:" + getPackageName()));
                 startActivityForResult(intent, 0);
+            } else {
+                if (windowPrefs.isVisible()) {
+                    startService(new Intent(this, FloatingService.class));
+                }
             }
         }
 
@@ -129,7 +139,7 @@ public class MainActivity extends Activity {
         tvPing.setTextColor(Color.WHITE);
         main.addView(tvPing);
 
-        // Signal
+        // Signal dBm
         tvDbm = new TextView(this);
         tvDbm.setText(langManager.get("signal") + ": -- dBm");
         tvDbm.setTextSize(14);
@@ -241,11 +251,12 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
+        // Signal Strength (dBm)
+        updateSignalInfo(tm);
+
         // Ping (background thread)
         new Thread(() -> {
             long ping = measurePing();
-            logger.log(grade, ping, 0);
-            
             final String pingText = ping >= 0 ? ping + " ms" : "timeout";
             final int pingColor = ping < 0 ? Color.RED :
                     ping < 100 ? Color.parseColor("#00CC44") :
@@ -254,9 +265,74 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 tvPing.setText(langManager.get("ping") + ": " + pingText);
                 tvPing.setTextColor(pingColor);
+                
+                // Log data
+                try {
+                    long rx = android.net.TrafficStats.getMobileRxBytes();
+                    long tx = android.net.TrafficStats.getMobileTxBytes();
+                    long dataKB = (rx + tx) / 1024;
+                    logger.log(grade, ping, dataKB);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                
                 updateHistory();
             });
         }).start();
+    }
+
+    private void updateSignalInfo(TelephonyManager tm) {
+        try {
+            if (!hasPermissions()) {
+                tvDbm.setText(langManager.get("signal") + ": No permission");
+                return;
+            }
+
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null || cells.isEmpty()) {
+                tvDbm.setText(langManager.get("signal") + ": No signal info");
+                return;
+            }
+
+            for (CellInfo cell : cells) {
+                if (!cell.isRegistered()) continue;
+
+                if (cell instanceof CellInfoLte) {
+                    CellSignalStrengthLte lte = ((CellInfoLte) cell).getCellSignalStrength();
+                    int dbm = lte.getDbm();
+                    int rsrp = lte.getRsrp();
+                    tvDbm.setText("Signal: " + dbm + " dBm (RSRP: " + rsrp + ")");
+                    return;
+                }
+
+                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                    int ssRsrp = nr.getSsRsrp();
+                    tvDbm.setText("Signal: " + ssRsrp + " dBm (5G NR)");
+                    return;
+                }
+
+                if (cell instanceof CellInfoWcdma) {
+                    CellSignalStrengthWcdma wcdma = ((CellInfoWcdma) cell).getCellSignalStrength();
+                    int dbm = wcdma.getDbm();
+                    tvDbm.setText("Signal: " + dbm + " dBm (3G)");
+                    return;
+                }
+
+                if (cell instanceof CellInfoGsm) {
+                    CellSignalStrengthGsm gsm = ((CellInfoGsm) cell).getCellSignalStrength();
+                    int dbm = gsm.getDbm();
+                    tvDbm.setText("Signal: " + dbm + " dBm (2G)");
+                    return;
+                }
+            }
+
+            tvDbm.setText(langManager.get("signal") + ": Unknown type");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            tvDbm.setText(langManager.get("signal") + ": Error");
+        }
     }
 
     private String getNetworkName(int type) {
@@ -309,15 +385,16 @@ public class MainActivity extends Activity {
         try {
             JSONArray logs = logger.getLogs();
             StringBuilder sb = new StringBuilder();
-            sb.append("Time    Grade  Ping\n");
-            sb.append("-------------------\n");
+            sb.append("Time    Grade  Ping  Data\n");
+            sb.append("--------------------------\n");
             
             int count = 0;
             for (int i = logs.length() - 1; i >= 0 && count < 10; i--) {
                 JSONObject obj = logs.getJSONObject(i);
                 sb.append(obj.getString("time").substring(0, 8)).append(" ")
                   .append(obj.getString("grade")).append(" ")
-                  .append(obj.getLong("ping")).append("ms\n");
+                  .append(obj.getLong("ping")).append("ms ")
+                  .append(obj.getLong("data")).append("KB\n");
                 count++;
             }
             
