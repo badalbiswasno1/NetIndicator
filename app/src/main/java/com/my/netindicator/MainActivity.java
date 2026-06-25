@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                handler.postDelayed(this, 2000);
+
             }
         };
         handler.post(updater);
@@ -122,6 +122,7 @@ public class MainActivity extends Activity {
         swipeRefresh = new SwipeRefreshLayout(this);
         swipeRefresh.setColorSchemeColors(Color.parseColor("#00CC44"), Color.parseColor("#0099FF"), Color.parseColor("#FFD700"));
         swipeRefresh.setOnRefreshListener(() -> {
+            try {
             vibrate();
             updateUI();
         });
