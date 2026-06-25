@@ -11,23 +11,12 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
-import android.telephony.CellInfo;
-import android.telephony.CellInfoGsm;
-import android.telephony.CellInfoLte;
-import android.telephony.CellInfoNr;
-import android.telephony.CellInfoWcdma;
-import android.telephony.CellSignalStrengthGsm;
-import android.telephony.CellSignalStrengthLte;
-import android.telephony.CellSignalStrengthNr;
-import android.telephony.CellSignalStrengthWcdma;
 import android.telephony.TelephonyManager;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.graphics.Color;
 
 import androidx.core.app.NotificationCompat;
-
-import java.util.List;
 
 public class FloatingService extends Service {
     private WindowManager windowManager;
@@ -84,12 +73,18 @@ public class FloatingService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = prefs.getGravity();
+        params.x = 20;
+        params.y = 100;
 
         floatingView = new TextView(this);
-        floatingView.setText("?.?G");
         floatingView.setTextSize(prefs.getSize());
         floatingView.setTextColor(prefs.getTextColor());
-        floatingView.setBackgroundColor(prefs.getBackgroundColor());
+        
+        // Background with transparency
+        int bgColor = prefs.getBackgroundColor();
+        int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
+        int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
+        floatingView.setBackgroundColor(finalBg);
         floatingView.setPadding(20, 10, 20, 10);
 
         try {
@@ -114,11 +109,9 @@ public class FloatingService extends Service {
             int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
             
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) 
-                            == PackageManager.PERMISSION_GRANTED) {
-                        type = tm.getDataNetworkType();
-                    }
+                if (checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) 
+                        == PackageManager.PERMISSION_GRANTED) {
+                    type = tm.getDataNetworkType();
                 }
             } catch (SecurityException e) {
                 e.printStackTrace();
