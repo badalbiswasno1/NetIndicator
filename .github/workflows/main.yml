@@ -25,16 +25,12 @@ jobs:
       run: chmod +x gradlew
 
     - name: Decode Keystore
-      run: |
-        echo "${{ secrets.KEYSTORE }}" | base64 -d > app/release.keystore
+      env:
+        KEYSTORE_B64: ${{ secrets.KEYSTORE }}
+      run: echo "$KEYSTORE_B64" | base64 -d > app/release.keystore
 
     - name: Build Release APK
       run: ./gradlew assembleRelease --no-daemon
-      env:
-        KEYSTORE_PATH: release.keystore
-        KEYSTORE_PASSWORD: truenet123
-        KEY_ALIAS: truenetwork
-        KEY_PASSWORD: truenet123
 
     - name: Sign APK
       run: |
