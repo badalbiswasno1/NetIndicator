@@ -24,23 +24,11 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Decode Keystore
-      env:
-        KEYSTORE_B64: ${{ secrets.KEYSTORE }}
-      run: echo "$KEYSTORE_B64" | base64 -d > app/release.keystore
-
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --no-daemon
-
-    - name: Sign APK
-      run: |
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore app/release.keystore \
-          -storepass truenet123 -keypass truenet123 \
-          app/build/outputs/apk/release/app-release-unsigned.apk truenetwork
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: NetIndicator-APK
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
