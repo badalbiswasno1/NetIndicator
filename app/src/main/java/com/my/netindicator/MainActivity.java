@@ -123,8 +123,12 @@ public class MainActivity extends Activity {
         swipeRefresh.setColorSchemeColors(Color.parseColor("#00CC44"), Color.parseColor("#0099FF"), Color.parseColor("#FFD700"));
         swipeRefresh.setOnRefreshListener(() -> {
             try {
-            vibrate();
-            updateUI();
+                vibrate();
+                updateUI();
+            } catch (Exception e) {
+                e.printStackTrace();
+                swipeRefresh.setRefreshing(false);
+            }
         });
 
         ScrollView scroll = new ScrollView(this);
