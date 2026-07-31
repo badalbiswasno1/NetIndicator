@@ -56,6 +56,7 @@ public class LanguageManager {
         en.put("signal", "Signal");
         en.put("operator", "Operator");
         en.put("running", "Running");
+        en.put("session_data", "Session Data");
         en.put("minutes", "minutes");
         en.put("seconds", "seconds");
         en.put("data_used", "Data used since app start");
@@ -97,6 +98,7 @@ public class LanguageManager {
         bn.put("signal", "সিগন্যাল");
         bn.put("operator", "অপারেটর");
         bn.put("running", "চলছে");
+        bn.put("session_data", "সেশন ডেটা");
         bn.put("minutes", "মিনিট");
         bn.put("seconds", "সেকেন্ড");
         bn.put("data_used", "অ্যাপ চলার পর");
@@ -138,6 +140,7 @@ public class LanguageManager {
         hi.put("signal", "सिग्नल");
         hi.put("operator", "ऑपरेटर");
         hi.put("running", "चल रहा है");
+        hi.put("session_data", "सत्र डेटा");
         hi.put("minutes", "मिनट");
         hi.put("seconds", "सेकंड");
         hi.put("data_used", "ऐप चलने के बाद");
@@ -179,6 +182,7 @@ public class LanguageManager {
         ta.put("signal", "சிக்னல்");
         ta.put("operator", "ஆபரேட்டர்");
         ta.put("running", "இயங்குகிறது");
+        ta.put("session_data", "அமர்வு தரவு");
         ta.put("minutes", "நிமிடங்கள்");
         ta.put("seconds", "விநாடிகள்");
         ta.put("data_used", "பயன்பாட்டிற்குப் பிறகு");
@@ -220,6 +224,7 @@ public class LanguageManager {
         te.put("signal", "సిగ్నల్");
         te.put("operator", "ఆపరేటర్");
         te.put("running", "నడుస్తోంది");
+        te.put("session_data", "సెషన్ డేటా");
         te.put("minutes", "నిమిషాలు");
         te.put("seconds", "సెకన్లు");
         te.put("data_used", "యాప్ ప్రారంభించిన తర్వాత");
@@ -261,6 +266,7 @@ public class LanguageManager {
         mr.put("signal", "सिग्नल");
         mr.put("operator", "ऑपरेटर");
         mr.put("running", "चालू आहे");
+        mr.put("session_data", "सत्र डेटा");
         mr.put("minutes", "मिनिटे");
         mr.put("seconds", "सेकंद");
         mr.put("data_used", "अ‍ॅप सुरू झाल्यावर");
@@ -302,6 +308,7 @@ public class LanguageManager {
         gu.put("signal", "સિગ્નલ");
         gu.put("operator", "ઓપરેટર");
         gu.put("running", "ચાલી રહ્યું છે");
+        gu.put("session_data", "સેશન ડેટા");
         gu.put("minutes", "મિનિટ");
         gu.put("seconds", "સેકંડ");
         gu.put("data_used", "એપ શરૂ થયા પછી");
@@ -343,6 +350,7 @@ public class LanguageManager {
         ml.put("signal", "സിഗ്നൽ");
         ml.put("operator", "ഓപ്പറേറ്റർ");
         ml.put("running", "പ്രവർത്തിക്കുന്നു");
+        ml.put("session_data", "സെഷൻ ഡാറ്റ");
         ml.put("minutes", "മിനിറ്റുകൾ");
         ml.put("seconds", "സെക്കന്റുകൾ");
         ml.put("data_used", "ആപ്പ് പ്രവർത്തിച്ചതിന് ശേഷം");

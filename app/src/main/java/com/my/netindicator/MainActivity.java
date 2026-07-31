@@ -57,6 +57,8 @@ public class MainActivity extends Activity {
     private SwipeRefreshLayout swipeRefresh;
     private Vibrator vibrator;
     private ProgressBar loadingBar;
+    private long baselineRx, baselineTx;
+    private PingChartView chartView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +68,8 @@ public class MainActivity extends Activity {
         startTime = System.currentTimeMillis();
         logger = new NetworkLogger(this);
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        baselineRx = android.net.TrafficStats.getMobileRxBytes();
+        baselineTx = android.net.TrafficStats.getMobileTxBytes();
 
         java.io.File crashFile = new java.io.File(getFilesDir(), "crash_log.txt");
         if (crashFile.exists()) {
@@ -251,26 +255,39 @@ public class MainActivity extends Activity {
         histTitle.setTypeface(null, android.graphics.Typeface.BOLD);
         main.addView(histTitle);
 
-        tvHistory = new TextView(this);
-        tvHistory.setTextColor(Color.parseColor("#CCCCCC"));
-        tvHistory.setTextSize(11);
-        tvHistory.setTypeface(android.graphics.Typeface.MONOSPACE);
-        tvHistory.setPadding(0, 10, 0, 10);
-        main.addView(tvHistory);
+        chartView = new PingChartView(this);
+        LinearLayout.LayoutParams chartParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 400);
+        chartParams.topMargin = 10;
+        chartParams.bottomMargin = 20;
+        chartView.setLayoutParams(chartParams);
+        main.addView(chartView);
 
         // Buttons
         Button clearBtn = new Button(this);
+        clearBtn.setPadding(20, 14, 20, 14);
+        clearBtn.setMinHeight(0);
+        clearBtn.setMinimumHeight(0);
+        clearBtn.setTextSize(13);
+        clearBtn.setAllCaps(false);
         clearBtn.setText(langManager.get("clear_history"));
         clearBtn.setBackgroundColor(Color.parseColor("#E63329"));
         clearBtn.setTextColor(Color.WHITE);
         clearBtn.setOnClickListener(v -> {
             vibrate();
             logger.clear();
-            tvHistory.setText(langManager.get("no_data"));
+            chartView.setData(new java.util.ArrayList<>());
         });
-        main.addView(clearBtn);
+        LinearLayout.LayoutParams btnParams1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        btnParams1.topMargin = 8;
+        main.addView(clearBtn, btnParams1);
 
         Button analyticsBtn = new Button(this);
+        analyticsBtn.setPadding(20, 14, 20, 14);
+        analyticsBtn.setMinHeight(0);
+        analyticsBtn.setMinimumHeight(0);
+        analyticsBtn.setTextSize(13);
+        analyticsBtn.setAllCaps(false);
         analyticsBtn.setText("📊 " + langManager.get("data_analytics"));
         analyticsBtn.setBackgroundColor(Color.parseColor("#0099FF"));
         analyticsBtn.setTextColor(Color.WHITE);
@@ -278,9 +295,16 @@ public class MainActivity extends Activity {
             vibrate();
             startActivity(new Intent(this, DataAnalyticsActivity.class));
         });
-        main.addView(analyticsBtn);
+        LinearLayout.LayoutParams btnParams2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        btnParams2.topMargin = 8;
+        main.addView(analyticsBtn, btnParams2);
 
         Button settingsBtn = new Button(this);
+        settingsBtn.setPadding(20, 14, 20, 14);
+        settingsBtn.setMinHeight(0);
+        settingsBtn.setMinimumHeight(0);
+        settingsBtn.setTextSize(13);
+        settingsBtn.setAllCaps(false);
         settingsBtn.setText("⚙ " + langManager.get("settings"));
         settingsBtn.setBackgroundColor(Color.parseColor("#333333"));
         settingsBtn.setTextColor(Color.WHITE);
@@ -288,7 +312,10 @@ public class MainActivity extends Activity {
             vibrate();
             startActivity(new Intent(this, SettingsActivity.class));
         });
-        main.addView(settingsBtn);
+        LinearLayout.LayoutParams btnParams3 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        btnParams3.topMargin = 8;
+        btnParams3.bottomMargin = 20;
+        main.addView(settingsBtn, btnParams3);
 
         swipeRefresh.addView(scroll);
         setContentView(swipeRefresh);
@@ -318,10 +345,10 @@ public class MainActivity extends Activity {
         tvTime.setText(langManager.get("running") + ": " + (elapsed / 60) + "m " + (elapsed % 60) + "s");
 
         try {
-            long rx = android.net.TrafficStats.getMobileRxBytes();
-            long tx = android.net.TrafficStats.getMobileTxBytes();
-            long totalKB = (rx + tx) / 1024;
-            tvData.setText(totalKB > 1024 ? (totalKB / 1024) + " MB" : totalKB + " KB");
+            long rx = android.net.TrafficStats.getMobileRxBytes() - baselineRx;
+            long tx = android.net.TrafficStats.getMobileTxBytes() - baselineTx;
+            long totalKB = Math.max(0, (rx + tx) / 1024);
+            tvData.setText(langManager.get("session_data") + ": " + (totalKB > 1024 ? (totalKB / 1024) + " MB" : totalKB + " KB"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -355,9 +382,9 @@ public class MainActivity extends Activity {
                 tvPing.setTextColor(pingColor);
 
                 try {
-                    long rx = android.net.TrafficStats.getMobileRxBytes();
-                    long tx = android.net.TrafficStats.getMobileTxBytes();
-                    long dataKB = (rx + tx) / 1024;
+                    long rx = android.net.TrafficStats.getMobileRxBytes() - baselineRx;
+                    long tx = android.net.TrafficStats.getMobileTxBytes() - baselineTx;
+                    long dataKB = Math.max(0, (rx + tx) / 1024);
                     logger.log(grade, ping, dataKB);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -520,22 +547,17 @@ public class MainActivity extends Activity {
     private void updateHistory() {
         try {
             JSONArray logs = logger.getLogs();
-            StringBuilder sb = new StringBuilder();
-            sb.append("Time    Grade   Ping  Data\n");
-            sb.append("---------------------------\n");
+            java.util.List<Long> pingVals = new java.util.ArrayList<>();
             int count = 0;
-            for (int i = logs.length() - 1; i >= 0 && count < 15; i--) {
+            int start = Math.max(0, logs.length() - 20);
+            for (int i = start; i < logs.length(); i++) {
                 JSONObject obj = logs.getJSONObject(i);
-                sb.append(obj.getString("time").substring(0, 8)).append(" ")
-                  .append(String.format("%-6s", obj.getString("grade"))).append(" ")
-                  .append(obj.getLong("ping")).append("ms ")
-                  .append(obj.getLong("data")).append("KB\n");
+                pingVals.add(obj.getLong("ping"));
                 count++;
             }
-            if (count == 0) sb.append(langManager.get("no_data"));
-            tvHistory.setText(sb.toString());
+            chartView.setData(pingVals);
         } catch (Exception e) {
-            tvHistory.setText("Error loading history");
+            e.printStackTrace();
         }
     }
 
