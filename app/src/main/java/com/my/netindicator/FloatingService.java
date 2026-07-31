@@ -76,13 +76,17 @@ public class FloatingService extends Service {
     private void createFloatingView() {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
+        int touchFlags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        if (prefs.isLocked()) {
+            touchFlags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        }
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                         : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                touchFlags,
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = prefs.getGravity();
@@ -147,8 +151,23 @@ public class FloatingService extends Service {
         handler.post(updater);
     }
 
+    private boolean lastLockedState = false;
+
     private void updateFloatingNetwork() {
         try {
+            boolean locked = prefs.isLocked();
+            if (locked != lastLockedState) {
+                lastLockedState = locked;
+                android.view.WindowManager.LayoutParams p =
+                        (android.view.WindowManager.LayoutParams) floatingView.getLayoutParams();
+                int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                if (locked) {
+                    flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                }
+                p.flags = flags;
+                windowManager.updateViewLayout(floatingView, p);
+            }
+
             TelephonyManager tm = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
             int type = TelephonyManager.NETWORK_TYPE_UNKNOWN;
 
