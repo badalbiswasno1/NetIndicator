@@ -52,7 +52,7 @@ public class PingChartView extends View {
         super.onDraw(canvas);
         int w = getWidth();
         int h = getHeight();
-        int padLeft = 60, padRight = 20, padTop = 20, padBottom = 30;
+        int padLeft = 80, padRight = 20, padTop = 20, padBottom = 30;
 
         if (values == null || values.isEmpty()) {
             textPaint.setTextAlign(Paint.Align.CENTER);
@@ -71,8 +71,8 @@ public class PingChartView extends View {
             float y = padTop + (h - padTop - padBottom) * i / (float) steps;
             canvas.drawLine(padLeft, y, w - padRight, y, gridPaint);
             long labelVal = max - (max - min) * i / steps;
-            textPaint.setTextAlign(Paint.Align.RIGHT);
-            canvas.drawText(labelVal + "ms", padLeft - 10, y + 8, textPaint);
+            textPaint.setTextAlign(Paint.Align.LEFT);
+            canvas.drawText(labelVal + "ms", 4, y + 8, textPaint);
         }
 
         int n = values.size();
