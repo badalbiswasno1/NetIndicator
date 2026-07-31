@@ -59,6 +59,8 @@ public class MainActivity extends Activity {
     private ProgressBar loadingBar;
     private long baselineRx, baselineTx;
     private PingChartView chartView;
+    private CircularScoreView scoreView;
+    private TextView tvReason;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,12 +200,27 @@ public class MainActivity extends Activity {
         // Grade Display
         tvGrade = new TextView(this);
         tvGrade.setText("?.0G");
-        tvGrade.setTextSize(64);
+        tvGrade.setTextSize(40);
         tvGrade.setTypeface(null, android.graphics.Typeface.BOLD);
         tvGrade.setGravity(Gravity.CENTER);
         tvGrade.setTextColor(Color.parseColor("#00CC44"));
-        tvGrade.setPadding(0, 20, 0, 10);
+        tvGrade.setPadding(0, 20, 0, 0);
         main.addView(tvGrade);
+
+        scoreView = new CircularScoreView(this);
+        int scoreSize = (int) (240 * getResources().getDisplayMetrics().density);
+        LinearLayout.LayoutParams scoreParams = new LinearLayout.LayoutParams(scoreSize, scoreSize);
+        scoreParams.gravity = Gravity.CENTER_HORIZONTAL;
+        scoreParams.topMargin = 10;
+        main.addView(scoreView, scoreParams);
+
+        tvReason = new TextView(this);
+        tvReason.setText("");
+        tvReason.setTextSize(13);
+        tvReason.setGravity(Gravity.CENTER);
+        tvReason.setTextColor(Color.parseColor("#CCCCCC"));
+        tvReason.setPadding(20, 10, 20, 10);
+        main.addView(tvReason);
 
         // Ping
         tvPing = new TextView(this);
@@ -362,6 +379,13 @@ public class MainActivity extends Activity {
 
         updateSignalDisplay(tm, signalDbm);
 
+        final int signalDbmFinal = signalDbm;
+        final double baseGradeFinal = getBaseGrade(type);
+        final int rsrqFinal = getRsrq(tm);
+        final int sinrFinal = getSinr(tm);
+        final boolean caFinal = isCarrierAggregation(tm);
+        final boolean hasSinrFinal = sinrFinal != 0;
+
         new Thread(() -> {
             long ping = measurePing();
             final String pingText = ping >= 0 ? ping + " ms" : "timeout";
@@ -387,6 +411,11 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 tvPing.setText(langManager.get("ping") + ": " + pingText);
                 tvPing.setTextColor(pingColor);
+
+                NetworkScoreEngine.Result scoreResult = NetworkScoreEngine.compute(
+                        baseGradeFinal, signalDbmFinal, rsrqFinal, sinrFinal, ping, caFinal, hasSinrFinal);
+                scoreView.setScore(scoreResult.score, scoreResult.categoryColor, scoreResult.category);
+                tvReason.setText("Reason: " + android.text.TextUtils.join(", ", scoreResult.reasons));
 
                 try {
                     long rx = android.net.TrafficStats.getMobileRxBytes() - baselineRx;
@@ -484,6 +513,60 @@ public class MainActivity extends Activity {
             }
         } catch (Exception e) { e.printStackTrace(); }
         return 0;
+    }
+
+    private int getRsrq(TelephonyManager tm) {
+        try {
+            if (!hasPermissions()) return 0;
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null) return 0;
+            for (CellInfo cell : cells) {
+                if (!cell.isRegistered()) continue;
+                if (cell instanceof CellInfoLte) {
+                    return ((CellInfoLte) cell).getCellSignalStrength().getRsrq();
+                }
+                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                    try { return nr.getSsRsrq(); } catch (Exception e) { return 0; }
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    private int getSinr(TelephonyManager tm) {
+        try {
+            if (!hasPermissions()) return 0;
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null) return 0;
+            for (CellInfo cell : cells) {
+                if (!cell.isRegistered()) continue;
+                if (cell instanceof CellInfoLte) {
+                    return ((CellInfoLte) cell).getCellSignalStrength().getRssnr();
+                }
+                if (cell instanceof CellInfoNr && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    CellSignalStrengthNr nr = (CellSignalStrengthNr) ((CellInfoNr) cell).getCellSignalStrength();
+                    try { return nr.getSsSinr(); } catch (Exception e) { return 0; }
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return 0;
+    }
+
+    private boolean isCarrierAggregation(TelephonyManager tm) {
+        try {
+            if (!hasPermissions()) return false;
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null) return false;
+            int registeredCount = 0;
+            for (CellInfo cell : cells) {
+                if (cell.isRegistered() && (cell instanceof CellInfoLte || cell instanceof CellInfoNr)) {
+                    registeredCount++;
+                }
+            }
+            return registeredCount > 1;
+        } catch (Exception e) { e.printStackTrace(); }
+        return false;
     }
 
     private void updateSignalDisplay(TelephonyManager tm, int signalDbm) {
