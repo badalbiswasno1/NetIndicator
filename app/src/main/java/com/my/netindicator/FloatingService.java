@@ -163,7 +163,6 @@ public class FloatingService extends Service {
 
             int signalDbm = getSignalDbm(tm);
             String grade = calculateExactGrade(type, signalDbm);
-            floatingView.setText(grade);
 
             floatingView.setTextColor(prefs.getTextColor());
             int bgColor = prefs.getBackgroundColor();
@@ -171,6 +170,20 @@ public class FloatingService extends Service {
             int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
             floatingView.setBackgroundColor(finalBg);
             floatingView.setTextSize(prefs.getSize());
+            floatingView.setGravity(android.view.Gravity.CENTER);
+
+            final String gradeFinal = grade;
+            floatingView.setText(gradeFinal + "\n..." );
+
+            new Thread(() -> {
+                long ping = measurePing();
+                final String pingText = ping >= 0 ? ping + "ms" : "--";
+                handler.post(() -> {
+                    if (floatingView != null) {
+                        floatingView.setText(gradeFinal + "\n" + pingText);
+                    }
+                });
+            }).start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -212,6 +225,24 @@ public class FloatingService extends Service {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    private long measurePing() {
+        try {
+            Process process = Runtime.getRuntime().exec("/system/bin/ping -c 1 8.8.8.8");
+            process.waitFor();
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains("time=")) {
+                    int start = line.indexOf("time=") + 5;
+                    int end = line.indexOf(" ms", start);
+                    return (long) Float.parseFloat(line.substring(start, end));
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return -1;
     }
 
     private String calculateExactGrade(int networkType, int signalDbm) {
