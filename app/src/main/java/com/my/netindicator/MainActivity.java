@@ -61,6 +61,9 @@ public class MainActivity extends Activity {
     private PingChartView chartView;
     private CircularScoreView scoreView;
     private TextView tvReason;
+    private TextView tvHealthTitle, tvHealthOverall, tvHealthDns, tvHealthLatency, tvHealthLoss, tvHealthJitter;
+    private Handler healthHandler = new Handler();
+    private Runnable healthUpdater;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,6 +132,35 @@ public class MainActivity extends Activity {
             }
         };
         handler.post(updater);
+
+        healthUpdater = new Runnable() {
+            public void run() {
+                new Thread(() -> {
+                    try {
+                        NetworkHealthEngine.Result hr = NetworkHealthEngine.measure();
+                        runOnUiThread(() -> updateHealthCard(hr));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }).start();
+                healthHandler.postDelayed(this, 15000);
+            }
+        };
+        healthHandler.postDelayed(healthUpdater, 2000);
+    }
+
+    private void updateHealthCard(NetworkHealthEngine.Result hr) {
+        tvHealthOverall.setText("Overall Health: " + hr.healthPercent + " %");
+        int color;
+        if (hr.healthPercent >= 85) color = Color.parseColor("#00CC44");
+        else if (hr.healthPercent >= 60) color = Color.parseColor("#0099FF");
+        else if (hr.healthPercent >= 35) color = Color.parseColor("#FFA500");
+        else color = Color.parseColor("#E63329");
+        tvHealthOverall.setTextColor(color);
+        tvHealthDns.setText("DNS: " + hr.dnsLabel + (hr.dnsMs >= 0 ? " (" + hr.dnsMs + "ms)" : ""));
+        tvHealthLatency.setText("Latency: " + hr.latencyLabel + (hr.avgPing >= 0 ? " (" + hr.avgPing + "ms avg)" : ""));
+        tvHealthLoss.setText("Packet Loss: " + hr.packetLossPercent + "%");
+        tvHealthJitter.setText("Jitter: " + hr.jitter + "ms");
     }
 
     private boolean hasPermissions() {
@@ -338,6 +370,59 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams btnParams3 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         btnParams3.setMargins(6, 0, 0, 0);
         btnRow.addView(settingsBtn, btnParams3);
+
+        LinearLayout healthCard = new LinearLayout(this);
+        healthCard.setOrientation(LinearLayout.VERTICAL);
+        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
+        cardBg.setColor(Color.parseColor("#1A1A1A"));
+        cardBg.setCornerRadius(24f);
+        healthCard.setBackground(cardBg);
+        healthCard.setPadding(30, 24, 30, 24);
+        LinearLayout.LayoutParams healthCardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        healthCardParams.topMargin = 10;
+        healthCardParams.bottomMargin = 20;
+
+        tvHealthTitle = new TextView(this);
+        tvHealthTitle.setText("Internet Health");
+        tvHealthTitle.setTextColor(Color.parseColor("#FFD700"));
+        tvHealthTitle.setTextSize(15);
+        tvHealthTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        healthCard.addView(tvHealthTitle);
+
+        tvHealthOverall = new TextView(this);
+        tvHealthOverall.setText("Overall Health: -- %");
+        tvHealthOverall.setTextColor(Color.parseColor("#00CC44"));
+        tvHealthOverall.setTextSize(20);
+        tvHealthOverall.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvHealthOverall.setPadding(0, 10, 0, 10);
+        healthCard.addView(tvHealthOverall);
+
+        tvHealthDns = new TextView(this);
+        tvHealthDns.setText("DNS: --");
+        tvHealthDns.setTextColor(Color.parseColor("#CCCCCC"));
+        tvHealthDns.setTextSize(13);
+        healthCard.addView(tvHealthDns);
+
+        tvHealthLatency = new TextView(this);
+        tvHealthLatency.setText("Latency: --");
+        tvHealthLatency.setTextColor(Color.parseColor("#CCCCCC"));
+        tvHealthLatency.setTextSize(13);
+        healthCard.addView(tvHealthLatency);
+
+        tvHealthLoss = new TextView(this);
+        tvHealthLoss.setText("Packet Loss: --");
+        tvHealthLoss.setTextColor(Color.parseColor("#CCCCCC"));
+        tvHealthLoss.setTextSize(13);
+        healthCard.addView(tvHealthLoss);
+
+        tvHealthJitter = new TextView(this);
+        tvHealthJitter.setText("Jitter: --");
+        tvHealthJitter.setTextColor(Color.parseColor("#CCCCCC"));
+        tvHealthJitter.setTextSize(13);
+        healthCard.addView(tvHealthJitter);
+
+        main.addView(healthCard, healthCardParams);
 
         main.addView(btnRow, rowParams);
 
@@ -655,5 +740,6 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(updater);
+        healthHandler.removeCallbacks(healthUpdater);
     }
 }
