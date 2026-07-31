@@ -54,7 +54,7 @@
         <activity android:name=".ExportActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
         <service
             android:name=".FloatingService"
-            android:foregroundServiceType="dataSync"
+            android:foregroundServiceType="dataSync|location"
             android:exported="false" />
 
     </application>

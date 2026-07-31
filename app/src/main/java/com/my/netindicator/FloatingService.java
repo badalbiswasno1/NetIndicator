@@ -117,7 +117,7 @@ public class FloatingService extends Service {
                         return true;
                     case MotionEvent.ACTION_MOVE:
                         if (!prefs.isLocked()) {
-                            params.x = initialX + (int)(event.getRawX() - initialTouchX);
+                            params.x = initialX - (int)(event.getRawX() - initialTouchX);
                             params.y = initialY + (int)(event.getRawY() - initialTouchY);
                             windowManager.updateViewLayout(floatingView, params);
                         }
