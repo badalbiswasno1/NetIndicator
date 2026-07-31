@@ -200,6 +200,13 @@ public class FloatingService extends Service {
                 handler.post(() -> {
                     if (floatingView != null) {
                         floatingView.setText(gradeFinal + "\n" + pingText);
+                        try {
+                            android.view.WindowManager.LayoutParams p =
+                                    (android.view.WindowManager.LayoutParams) floatingView.getLayoutParams();
+                            windowManager.updateViewLayout(floatingView, p);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
             }).start();
