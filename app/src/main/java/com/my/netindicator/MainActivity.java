@@ -268,9 +268,9 @@ public class MainActivity extends Activity {
         clearBtn.setPadding(20, 14, 20, 14);
         clearBtn.setMinHeight(0);
         clearBtn.setMinimumHeight(0);
-        clearBtn.setTextSize(13);
+        clearBtn.setTextSize(12);
         clearBtn.setAllCaps(false);
-        clearBtn.setText(langManager.get("clear_history"));
+        clearBtn.setText("🗑 Clear");
         clearBtn.setBackgroundColor(Color.parseColor("#E63329"));
         clearBtn.setTextColor(Color.WHITE);
         clearBtn.setOnClickListener(v -> {
@@ -278,44 +278,51 @@ public class MainActivity extends Activity {
             logger.clear();
             chartView.setData(new java.util.ArrayList<>());
         });
-        LinearLayout.LayoutParams btnParams1 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnParams1.topMargin = 8;
-        main.addView(clearBtn, btnParams1);
+        LinearLayout btnRow = new LinearLayout(this);
+        btnRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        rowParams.topMargin = 8;
+        rowParams.bottomMargin = 20;
+
+        LinearLayout.LayoutParams btnParams1 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        btnParams1.setMargins(0, 0, 6, 0);
+        btnRow.addView(clearBtn, btnParams1);
 
         Button analyticsBtn = new Button(this);
         analyticsBtn.setPadding(20, 14, 20, 14);
         analyticsBtn.setMinHeight(0);
         analyticsBtn.setMinimumHeight(0);
-        analyticsBtn.setTextSize(13);
+        analyticsBtn.setTextSize(12);
         analyticsBtn.setAllCaps(false);
-        analyticsBtn.setText("📊 " + langManager.get("data_analytics"));
+        analyticsBtn.setText("📊 Stats");
         analyticsBtn.setBackgroundColor(Color.parseColor("#0099FF"));
         analyticsBtn.setTextColor(Color.WHITE);
         analyticsBtn.setOnClickListener(v -> {
             vibrate();
             startActivity(new Intent(this, DataAnalyticsActivity.class));
         });
-        LinearLayout.LayoutParams btnParams2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnParams2.topMargin = 8;
-        main.addView(analyticsBtn, btnParams2);
+        LinearLayout.LayoutParams btnParams2 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        btnParams2.setMargins(6, 0, 6, 0);
+        btnRow.addView(analyticsBtn, btnParams2);
 
         Button settingsBtn = new Button(this);
         settingsBtn.setPadding(20, 14, 20, 14);
         settingsBtn.setMinHeight(0);
         settingsBtn.setMinimumHeight(0);
-        settingsBtn.setTextSize(13);
+        settingsBtn.setTextSize(12);
         settingsBtn.setAllCaps(false);
-        settingsBtn.setText("⚙ " + langManager.get("settings"));
+        settingsBtn.setText("⚙ Setup");
         settingsBtn.setBackgroundColor(Color.parseColor("#333333"));
         settingsBtn.setTextColor(Color.WHITE);
         settingsBtn.setOnClickListener(v -> {
             vibrate();
             startActivity(new Intent(this, SettingsActivity.class));
         });
-        LinearLayout.LayoutParams btnParams3 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        btnParams3.topMargin = 8;
-        btnParams3.bottomMargin = 20;
-        main.addView(settingsBtn, btnParams3);
+        LinearLayout.LayoutParams btnParams3 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        btnParams3.setMargins(6, 0, 0, 0);
+        btnRow.addView(settingsBtn, btnParams3);
+
+        main.addView(btnRow, rowParams);
 
         swipeRefresh.addView(scroll);
         setContentView(swipeRefresh);
