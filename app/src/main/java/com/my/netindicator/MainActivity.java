@@ -67,6 +67,31 @@ public class MainActivity extends Activity {
         logger = new NetworkLogger(this);
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
+        java.io.File crashFile = new java.io.File(getFilesDir(), "crash_log.txt");
+        if (crashFile.exists()) {
+            try {
+                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(crashFile));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                reader.close();
+                new android.app.AlertDialog.Builder(this)
+                        .setTitle("Last Crash Log")
+                        .setMessage(sb.toString())
+                        .setPositiveButton("OK", null)
+                        .setNeutralButton("Copy", (d, w) -> {
+                            android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("crash", sb.toString()));
+                        })
+                        .show();
+                crashFile.delete();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         if (!hasPermissions()) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
         }
