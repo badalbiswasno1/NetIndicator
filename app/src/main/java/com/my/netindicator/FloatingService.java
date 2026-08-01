@@ -239,6 +239,7 @@ public class FloatingService extends Service {
                 final String pingText = ping >= 0 ? ping + "ms" : "--";
                 lastGrade = gradeFinal;
                 lastPing = pingText;
+                NetworkWidgetProvider.updateWidgets(FloatingService.this, gradeFinal, pingText);
                 if (lastAlertPing >= 0 && ping >= 0 && ping > lastAlertPing * 2 && ping > 150) {
                     sendAlert("Ping Increased", "Latency jumped to " + ping + "ms");
                 }
