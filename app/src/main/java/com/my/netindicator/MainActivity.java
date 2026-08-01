@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     private TextView tvReason;
     private TextView tvHealthTitle, tvHealthOverall, tvHealthDns, tvHealthLatency, tvHealthLoss, tvHealthJitter;
     private TextView tvStabTitle, tvStabLabel, tvStabDetails;
+    private TextView tvGamingTitle, tvGame1, tvGame2, tvGame3;
     private Handler healthHandler = new Handler();
     private Runnable healthUpdater;
 
@@ -162,6 +163,16 @@ public class MainActivity extends Activity {
         tvHealthLatency.setText("Latency: " + hr.latencyLabel + (hr.avgPing >= 0 ? " (" + hr.avgPing + "ms avg)" : ""));
         tvHealthLoss.setText("Packet Loss: " + hr.packetLossPercent + "%");
         tvHealthJitter.setText("Jitter: " + hr.jitter + "ms");
+
+        java.util.List<GamingEngine.GameRating> ratings = GamingEngine.analyze(hr.avgPing, hr.jitter, hr.packetLossPercent);
+        TextView[] gameViews = new TextView[]{tvGame1, tvGame2, tvGame3};
+        for (int i = 0; i < ratings.size() && i < gameViews.length; i++) {
+            GamingEngine.GameRating g = ratings.get(i);
+            StringBuilder stars = new StringBuilder();
+            for (int s = 0; s < 5; s++) stars.append(s < g.stars ? "\u2605" : "\u2606");
+            gameViews[i].setText(g.name + ": " + g.status + " " + stars);
+            gameViews[i].setTextColor(g.color);
+        }
     }
 
     private boolean hasPermissions() {
@@ -458,6 +469,48 @@ public class MainActivity extends Activity {
         stabilityCard.addView(tvStabDetails);
 
         main.addView(stabilityCard, stabCardParams);
+
+        LinearLayout gamingCard = new LinearLayout(this);
+        gamingCard.setOrientation(LinearLayout.VERTICAL);
+        android.graphics.drawable.GradientDrawable gameBg = new android.graphics.drawable.GradientDrawable();
+        gameBg.setColor(Color.parseColor("#1A1A1A"));
+        gameBg.setCornerRadius(24f);
+        gamingCard.setBackground(gameBg);
+        gamingCard.setPadding(30, 24, 30, 24);
+        LinearLayout.LayoutParams gameCardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        gameCardParams.bottomMargin = 20;
+
+        tvGamingTitle = new TextView(this);
+        tvGamingTitle.setText("Gaming Analyzer");
+        tvGamingTitle.setTextColor(Color.parseColor("#FFD700"));
+        tvGamingTitle.setTextSize(15);
+        tvGamingTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvGamingTitle.setPadding(0, 0, 0, 10);
+        gamingCard.addView(tvGamingTitle);
+
+        tvGame1 = new TextView(this);
+        tvGame1.setText("PUBG Mobile: --");
+        tvGame1.setTextColor(Color.parseColor("#CCCCCC"));
+        tvGame1.setTextSize(13);
+        tvGame1.setPadding(0, 4, 0, 4);
+        gamingCard.addView(tvGame1);
+
+        tvGame2 = new TextView(this);
+        tvGame2.setText("Call of Duty Mobile: --");
+        tvGame2.setTextColor(Color.parseColor("#CCCCCC"));
+        tvGame2.setTextSize(13);
+        tvGame2.setPadding(0, 4, 0, 4);
+        gamingCard.addView(tvGame2);
+
+        tvGame3 = new TextView(this);
+        tvGame3.setText("Free Fire: --");
+        tvGame3.setTextColor(Color.parseColor("#CCCCCC"));
+        tvGame3.setTextSize(13);
+        tvGame3.setPadding(0, 4, 0, 4);
+        gamingCard.addView(tvGame3);
+
+        main.addView(gamingCard, gameCardParams);
 
         main.addView(btnRow, rowParams);
 
