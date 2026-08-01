@@ -33,11 +33,16 @@ import androidx.core.app.NotificationCompat;
 import java.util.List;
 
 public class FloatingService extends Service {
+    public static final String ACTION_PAUSE = "com.my.netindicator.ACTION_PAUSE";
+    public static final String ACTION_RESUME = "com.my.netindicator.ACTION_RESUME";
     private WindowManager windowManager;
     private TextView floatingView;
     private Handler handler = new Handler();
     private Runnable updater;
     private FloatingWindowPrefs prefs;
+    private boolean paused = false;
+    private String lastGrade = "?.0G";
+    private String lastPing = "--";
 
     @Override
     public void onCreate() {
@@ -52,6 +57,22 @@ public class FloatingService extends Service {
         }
     }
 
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getAction() != null) {
+            if (ACTION_PAUSE.equals(intent.getAction())) {
+                paused = true;
+                if (floatingView != null) floatingView.setVisibility(View.GONE);
+                updateNotification();
+            } else if (ACTION_RESUME.equals(intent.getAction())) {
+                paused = false;
+                if (floatingView != null) floatingView.setVisibility(View.VISIBLE);
+                updateNotification();
+            }
+        }
+        return START_STICKY;
+    }
+
     private Notification createNotification() {
         String channelId = "floating_service";
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -61,16 +82,35 @@ public class FloatingService extends Service {
             manager.createNotificationChannel(channel);
         }
 
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+        Intent openIntent = new Intent(this, MainActivity.class);
+        PendingIntent openPendingIntent = PendingIntent.getActivity(this, 0, openIntent,
                 PendingIntent.FLAG_IMMUTABLE);
+
+        Intent toggleIntent = new Intent(this, FloatingService.class);
+        toggleIntent.setAction(paused ? ACTION_RESUME : ACTION_PAUSE);
+        PendingIntent togglePendingIntent = PendingIntent.getService(this, 1, toggleIntent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        String content = lastGrade + "  |  " + lastPing + "  |  " + (paused ? "Paused" : "Live");
 
         return new NotificationCompat.Builder(this, channelId)
                 .setContentTitle("True Network")
-                .setContentText("Monitoring...")
+                .setContentText(content)
                 .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(openPendingIntent)
+                .addAction(0, paused ? "Resume" : "Pause", togglePendingIntent)
+                .addAction(0, "Open App", openPendingIntent)
+                .setOnlyAlertOnce(true)
                 .build();
+    }
+
+    private void updateNotification() {
+        try {
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.notify(1, createNotification());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createFloatingView() {
@@ -191,7 +231,10 @@ public class FloatingService extends Service {
             new Thread(() -> {
                 long ping = measurePing();
                 final String pingText = ping >= 0 ? ping + "ms" : "--";
+                lastGrade = gradeFinal;
+                lastPing = pingText;
                 handler.post(() -> {
+                    updateNotification();
                     if (floatingView != null) {
                         floatingView.setText(gradeFinal + "\n" + pingText);
                         try {
