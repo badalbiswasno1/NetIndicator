@@ -11,7 +11,7 @@
         android:id="@+id/widgetGrade"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="?.0G"
+        android:text="\?.0G"
         android:textColor="#00CC44"
         android:textSize="28sp"
         android:textStyle="bold" />
