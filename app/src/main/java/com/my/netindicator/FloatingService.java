@@ -97,11 +97,8 @@ public class FloatingService extends Service {
         floatingView.setTextSize(prefs.getSize());
         floatingView.setTextColor(prefs.getTextColor());
 
-        int bgColor = prefs.getBackgroundColor();
-        int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
-        int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
-        floatingView.setBackgroundColor(finalBg);
-        floatingView.setPadding(20, 10, 20, 10);
+        applyGlassBackground(floatingView, prefs.getBackgroundColor(), prefs.getTransparency());
+        floatingView.setPadding(36, 22, 36, 22);
 
         // Draggable floating window
         floatingView.setOnTouchListener(new View.OnTouchListener() {
@@ -184,10 +181,7 @@ public class FloatingService extends Service {
             String grade = calculateExactGrade(type, signalDbm);
 
             floatingView.setTextColor(prefs.getTextColor());
-            int bgColor = prefs.getBackgroundColor();
-            int alpha = 255 - (int)(prefs.getTransparency() * 2.55);
-            int finalBg = (bgColor & 0x00FFFFFF) | (alpha << 24);
-            floatingView.setBackgroundColor(finalBg);
+            applyGlassBackground(floatingView, prefs.getBackgroundColor(), prefs.getTransparency());
             floatingView.setTextSize(prefs.getSize());
             floatingView.setGravity(android.view.Gravity.CENTER);
 
@@ -251,6 +245,19 @@ public class FloatingService extends Service {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    private void applyGlassBackground(TextView view, int baseColor, int transparencyPercent) {
+        int alpha = 255 - (int) (transparencyPercent * 2.55);
+        int topColor = (baseColor & 0x00FFFFFF) | (Math.min(255, alpha + 30) << 24);
+        int bottomColor = (baseColor & 0x00FFFFFF) | (Math.max(0, alpha - 30) << 24);
+
+        android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{topColor, bottomColor});
+        gd.setCornerRadius(40f);
+        gd.setStroke(2, 0x33FFFFFF);
+        view.setBackground(gd);
     }
 
     private long measurePing() {
