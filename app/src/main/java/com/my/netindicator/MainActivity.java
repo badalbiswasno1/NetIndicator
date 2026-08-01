@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
     private CircularScoreView scoreView;
     private TextView tvReason;
     private TextView tvHealthTitle, tvHealthOverall, tvHealthDns, tvHealthLatency, tvHealthLoss, tvHealthJitter;
+    private TextView tvStabTitle, tvStabLabel, tvStabDetails;
     private Handler healthHandler = new Handler();
     private Runnable healthUpdater;
 
@@ -424,6 +425,40 @@ public class MainActivity extends Activity {
 
         main.addView(healthCard, healthCardParams);
 
+        LinearLayout stabilityCard = new LinearLayout(this);
+        stabilityCard.setOrientation(LinearLayout.VERTICAL);
+        android.graphics.drawable.GradientDrawable stabBg = new android.graphics.drawable.GradientDrawable();
+        stabBg.setColor(Color.parseColor("#1A1A1A"));
+        stabBg.setCornerRadius(24f);
+        stabilityCard.setBackground(stabBg);
+        stabilityCard.setPadding(30, 24, 30, 24);
+        LinearLayout.LayoutParams stabCardParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        stabCardParams.bottomMargin = 20;
+
+        tvStabTitle = new TextView(this);
+        tvStabTitle.setText("Stability Monitor");
+        tvStabTitle.setTextColor(Color.parseColor("#FFD700"));
+        tvStabTitle.setTextSize(15);
+        tvStabTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+        stabilityCard.addView(tvStabTitle);
+
+        tvStabLabel = new TextView(this);
+        tvStabLabel.setText("Analyzing...");
+        tvStabLabel.setTextColor(Color.parseColor("#888888"));
+        tvStabLabel.setTextSize(20);
+        tvStabLabel.setTypeface(null, android.graphics.Typeface.BOLD);
+        tvStabLabel.setPadding(0, 10, 0, 10);
+        stabilityCard.addView(tvStabLabel);
+
+        tvStabDetails = new TextView(this);
+        tvStabDetails.setText("");
+        tvStabDetails.setTextColor(Color.parseColor("#CCCCCC"));
+        tvStabDetails.setTextSize(13);
+        stabilityCard.addView(tvStabDetails);
+
+        main.addView(stabilityCard, stabCardParams);
+
         main.addView(btnRow, rowParams);
 
         swipeRefresh.addView(scroll);
@@ -731,6 +766,14 @@ public class MainActivity extends Activity {
                 count++;
             }
             chartView.setData(pingVals);
+
+            StabilityEngine.Result stab = StabilityEngine.analyze(logs, 20);
+            tvStabLabel.setText(stab.label);
+            tvStabLabel.setTextColor(stab.labelColor);
+            tvStabDetails.setText(
+                    "Ping variation: " + String.format("%.1f", stab.pingStdDev) + "ms\n" +
+                    "Network drops: " + stab.dropCount + "\n" +
+                    "Grade changes: " + stab.gradeChanges);
         } catch (Exception e) {
             e.printStackTrace();
         }
