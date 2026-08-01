@@ -14,7 +14,7 @@ public class NetworkScoreEngine {
     }
 
     public static Result compute(double baseGrade, int signalDbm, int rsrq, int sinr,
-                                   long pingMs, boolean carrierAggregation, boolean hasSinr) {
+                                   long pingMs, boolean carrierAggregation, boolean hasSinr, boolean isWifi) {
         Result r = new Result();
         r.reasons = new ArrayList<>();
 
@@ -23,15 +23,19 @@ public class NetworkScoreEngine {
         double qualityScore = hasSinr ? qualitySubScore(rsrq, sinr) : signalScore;
         double typeScore = (baseGrade / 5.0) * 100.0;
 
-        double total = signalScore * 0.35 + pingScore * 0.30 + qualityScore * 0.20 + typeScore * 0.15;
-
-        if (carrierAggregation) {
-            total += 5;
-            r.reasons.add("Carrier aggregation detected");
-        }
-
-        if (signalDbm == 0) {
-            total = Math.min(total, 40);
+        double total;
+        if (isWifi) {
+            total = pingScore * 0.75 + 100 * 0.25;
+            r.reasons.add("Connected via WiFi");
+        } else {
+            total = signalScore * 0.35 + pingScore * 0.30 + qualityScore * 0.20 + typeScore * 0.15;
+            if (carrierAggregation) {
+                total += 5;
+                r.reasons.add("Carrier aggregation detected");
+            }
+            if (signalDbm == 0) {
+                total = Math.min(total, 40);
+            }
         }
 
         total = Math.max(0, Math.min(100, total));
@@ -51,7 +55,7 @@ public class NetworkScoreEngine {
             r.categoryColor = 0xFFE63329;
         }
 
-        if (signalDbm != 0) {
+        if (!isWifi && signalDbm != 0) {
             if (signalDbm > -80) r.reasons.add("Strong signal");
             else if (signalDbm > -100) r.reasons.add("Moderate signal");
             else r.reasons.add("Weak signal");

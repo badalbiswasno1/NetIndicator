@@ -532,9 +532,15 @@ public class MainActivity extends Activity {
 
         int signalDbm = getSignalDbm(tm);
 
+        boolean isWifi = isWifiConnected();
         String grade = calculateExactGrade(type, signalDbm);
-        tvGrade.setText(grade);
-        tvGrade.setTextColor(getGradeColor(grade));
+        if (isWifi) {
+            tvGrade.setText("WiFi");
+            tvGrade.setTextColor(Color.parseColor("#0099FF"));
+        } else {
+            tvGrade.setText(grade);
+            tvGrade.setTextColor(getGradeColor(grade));
+        }
 
         tvSignal.setText(langManager.get("operator") + ": " + tm.getNetworkOperatorName());
 
@@ -550,13 +556,14 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        updateSignalDisplay(tm, signalDbm);
+        updateSignalDisplay(tm, signalDbm, isWifi);
 
         final int signalDbmFinal = signalDbm;
         final double baseGradeFinal = getBaseGrade(type);
         final int rsrqFinal = getRsrq(tm);
         final int sinrFinal = getSinr(tm);
         final boolean caFinal = isCarrierAggregation(tm);
+        final boolean isWifiFinal = isWifi;
         final boolean hasSinrFinal = sinrFinal != 0;
 
         new Thread(() -> {
@@ -586,7 +593,7 @@ public class MainActivity extends Activity {
                 tvPing.setTextColor(pingColor);
 
                 NetworkScoreEngine.Result scoreResult = NetworkScoreEngine.compute(
-                        baseGradeFinal, signalDbmFinal, rsrqFinal, sinrFinal, ping, caFinal, hasSinrFinal);
+                        baseGradeFinal, signalDbmFinal, rsrqFinal, sinrFinal, ping, caFinal, hasSinrFinal, isWifiFinal);
                 scoreView.setScore(scoreResult.score, scoreResult.categoryColor, scoreResult.category);
                 tvReason.setText("Reason: " + android.text.TextUtils.join(", ", scoreResult.reasons));
 
@@ -742,7 +749,23 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    private void updateSignalDisplay(TelephonyManager tm, int signalDbm) {
+    private boolean isWifiConnected() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            android.net.Network network = cm.getActiveNetwork();
+            if (network == null) return false;
+            android.net.NetworkCapabilities caps = cm.getNetworkCapabilities(network);
+            return caps != null && caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void updateSignalDisplay(TelephonyManager tm, int signalDbm, boolean isWifi) {
+        if (isWifi) {
+            tvDbm.setText(langManager.get("signal") + ": WiFi Connected");
+            return;
+        }
         try {
             if (!hasPermissions()) {
                 tvDbm.setText(langManager.get("signal") + ": No permission");
