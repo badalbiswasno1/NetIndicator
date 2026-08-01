@@ -43,6 +43,11 @@ public class FloatingService extends Service {
     private boolean paused = false;
     private String lastGrade = "?.0G";
     private String lastPing = "--";
+    private int lastAlertDbm = 0;
+    private long lastAlertPing = -1;
+    private String lastAlertBaseType = "";
+    private boolean lastAlertCA = false;
+    private boolean alertChannelCreated = false;
 
     @Override
     public void onCreate() {
@@ -219,6 +224,7 @@ public class FloatingService extends Service {
 
             int signalDbm = getSignalDbm(tm);
             String grade = calculateExactGrade(type, signalDbm);
+            checkAlerts(signalDbm, grade, type, tm);
 
             floatingView.setTextColor(prefs.getTextColor());
             applyGlassBackground(floatingView, prefs.getBackgroundColor(), prefs.getTransparency());
@@ -233,6 +239,10 @@ public class FloatingService extends Service {
                 final String pingText = ping >= 0 ? ping + "ms" : "--";
                 lastGrade = gradeFinal;
                 lastPing = pingText;
+                if (lastAlertPing >= 0 && ping >= 0 && ping > lastAlertPing * 2 && ping > 150) {
+                    sendAlert("Ping Increased", "Latency jumped to " + ping + "ms");
+                }
+                if (ping >= 0) lastAlertPing = ping;
                 handler.post(() -> {
                     updateNotification();
                     if (floatingView != null) {
@@ -301,6 +311,78 @@ public class FloatingService extends Service {
         gd.setCornerRadius(40f);
         gd.setStroke(2, 0x33FFFFFF);
         view.setBackground(gd);
+    }
+
+    private void checkAlerts(int signalDbm, String grade, int networkType, TelephonyManager tm) {
+        try {
+            if (!prefs.isVisible()) return;
+
+            String baseType = grade.length() > 0 ? grade.substring(0, 1) : "?";
+
+            if (lastAlertDbm != 0 && signalDbm != 0 && (signalDbm - lastAlertDbm) <= -15) {
+                sendAlert("Signal Dropped", "Signal weakened to " + signalDbm + " dBm");
+            }
+
+            if (!lastAlertBaseType.isEmpty() && !lastAlertBaseType.equals(baseType) && !baseType.equals("?")) {
+                sendAlert("Network Changed", "Switched to " + grade + " network");
+                if (baseType.equals("5")) {
+                    sendAlert("5G Available", "5G network is now available");
+                }
+            }
+
+            boolean ca = isCarrierAggregationCheck(tm);
+            if (ca && !lastAlertCA) {
+                sendAlert("Carrier Aggregation", "Carrier aggregation is now active");
+            }
+            lastAlertCA = ca;
+
+            if (signalDbm != 0) lastAlertDbm = signalDbm;
+            if (!baseType.equals("?")) lastAlertBaseType = baseType;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isCarrierAggregationCheck(TelephonyManager tm) {
+        try {
+            List<CellInfo> cells = tm.getAllCellInfo();
+            if (cells == null) return false;
+            int count = 0;
+            for (CellInfo cell : cells) {
+                if (cell.isRegistered() && (cell instanceof CellInfoLte || cell instanceof CellInfoNr)) {
+                    count++;
+                }
+            }
+            return count > 1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void sendAlert(String title, String message) {
+        try {
+            String alertChannelId = "network_alerts";
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (!alertChannelCreated && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        alertChannelId, "Network Alerts", NotificationManager.IMPORTANCE_DEFAULT);
+                manager.createNotificationChannel(channel);
+                alertChannelCreated = true;
+            }
+            Intent openIntent = new Intent(this, MainActivity.class);
+            PendingIntent openPendingIntent = PendingIntent.getActivity(this, 2, openIntent,
+                    PendingIntent.FLAG_IMMUTABLE);
+            Notification n = new NotificationCompat.Builder(this, alertChannelId)
+                    .setContentTitle(title)
+                    .setContentText(message)
+                    .setSmallIcon(android.R.drawable.ic_menu_compass)
+                    .setContentIntent(openPendingIntent)
+                    .setAutoCancel(true)
+                    .build();
+            manager.notify((int) System.currentTimeMillis(), n);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private long measurePing() {
