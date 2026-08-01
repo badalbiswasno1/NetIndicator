@@ -594,7 +594,7 @@ public class MainActivity extends Activity {
                     long rx = android.net.TrafficStats.getMobileRxBytes() - baselineRx;
                     long tx = android.net.TrafficStats.getMobileTxBytes() - baselineTx;
                     long dataKB = Math.max(0, (rx + tx) / 1024);
-                    logger.log(grade, ping, dataKB);
+                    logger.log(grade, ping, dataKB, signalDbmFinal);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

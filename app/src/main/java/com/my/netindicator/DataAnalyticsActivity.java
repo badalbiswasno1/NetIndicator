@@ -184,12 +184,20 @@ public class DataAnalyticsActivity extends Activity {
             if (filteredCount == 0) {
                 sb.append("\nNo data in last ").append(selectedMinutes).append(" minutes");
             } else {
-                sb.append("\n\n--- Summary ---\n");
-                sb.append("Records: ").append(filteredCount).append("\n");
-                if (validPingCount > 0) {
-                    sb.append("Avg Ping: ").append(totalPing / validPingCount).append("ms\n");
-                }
-                sb.append("Latest: ").append(lastGrade);
+                StatisticsEngine.Result stats = StatisticsEngine.compute(allLogs, cutoffTime);
+                sb.append("\n\n=== Statistics ===\n");
+                sb.append("Records: ").append(stats.recordCount).append("\n");
+                sb.append("Min Ping: ").append(stats.minPing >= 0 ? stats.minPing + "ms" : "--").append("\n");
+                sb.append("Max Ping: ").append(stats.maxPing >= 0 ? stats.maxPing + "ms" : "--").append("\n");
+                sb.append("Avg Ping: ").append(stats.avgPing >= 0 ? stats.avgPing + "ms" : "--").append("\n");
+                sb.append("Median Ping: ").append(stats.medianPing >= 0 ? stats.medianPing + "ms" : "--").append("\n");
+                sb.append("Best Signal: ").append(stats.bestSignal != 0 ? stats.bestSignal + " dBm" : "--").append("\n");
+                sb.append("Worst Signal: ").append(stats.worstSignal != 0 ? stats.worstSignal + " dBm" : "--").append("\n");
+                sb.append("Avg Grade: ").append(String.format("%.1fG", stats.avgGrade)).append("\n");
+                sb.append("Best Grade: ").append(stats.bestGradeStr).append("\n");
+                sb.append("Worst Grade: ").append(stats.worstGradeStr).append("\n");
+                sb.append("Total Data: ").append(stats.totalDataKB > 1024 ? String.format("%.1f MB", stats.totalDataKB / 1024.0) : stats.totalDataKB + " KB").append("\n");
+                sb.append("\nLatest: ").append(lastGrade);
                 if (lastPing >= 0) sb.append(" (").append(lastPing).append("ms)");
             }
 

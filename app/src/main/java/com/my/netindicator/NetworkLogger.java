@@ -21,6 +21,10 @@ public class NetworkLogger {
     }
 
     public void log(String grade, long ping, long dataKB) {
+        log(grade, ping, dataKB, 0);
+    }
+
+    public void log(String grade, long ping, long dataKB, int signalDbm) {
         try {
             JSONArray logs = getLogs();
             JSONObject entry = new JSONObject();
@@ -31,6 +35,7 @@ public class NetworkLogger {
             entry.put("network", grade.substring(0, grade.indexOf('.')));
             entry.put("ping", ping);
             entry.put("data", dataKB);
+            entry.put("signal", signalDbm);
 
             logs.put(entry);
 
