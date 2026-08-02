@@ -77,7 +77,7 @@ public class FloatingWindowPrefs {
     }
 
     public int getRefreshInterval() {
-        return prefs.getInt("refresh_interval", 3000);
+        return prefs.getInt("refresh_interval", 2000);
     }
 
     public void setRefreshInterval(int interval) {

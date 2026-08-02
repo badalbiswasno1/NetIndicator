@@ -130,7 +130,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 });
-                handler.postDelayed(this, 3000);
+                handler.postDelayed(this, 2000);
             }
         };
         handler.post(updater);
