@@ -152,7 +152,7 @@ public class MainActivity extends Activity {
     }
 
     private void updateHealthCard(NetworkHealthEngine.Result hr) {
-        tvHealthOverall.setText("Overall Health: " + hr.healthPercent + " %");
+        setTextAnimated(tvHealthOverall, "Overall Health: " + hr.healthPercent + " %");
         int color;
         if (hr.healthPercent >= 85) color = Color.parseColor("#00CC44");
         else if (hr.healthPercent >= 60) color = Color.parseColor("#0099FF");
@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
             GamingEngine.GameRating g = ratings.get(i);
             StringBuilder stars = new StringBuilder();
             for (int s = 0; s < 5; s++) stars.append(s < g.stars ? "\u2605" : "\u2606");
-            gameViews[i].setText(g.name + ": " + g.status + " " + stars);
+            setTextAnimated(gameViews[i], g.name + ": " + g.status + " " + stars);
             gameViews[i].setTextColor(g.color);
         }
     }
@@ -598,7 +598,7 @@ public class MainActivity extends Activity {
             }
 
             runOnUiThread(() -> {
-                tvPing.setText(langManager.get("ping") + ": " + pingText);
+                setTextAnimated(tvPing, langManager.get("ping") + ": " + pingText);
                 tvPing.setTextColor(pingColor);
 
                 NetworkScoreEngine.Result scoreResult = NetworkScoreEngine.compute(
@@ -758,6 +758,18 @@ public class MainActivity extends Activity {
         return false;
     }
 
+    private void setTextAnimated(TextView tv, String newText) {
+        if (tv == null || newText == null || newText.equals(tv.getText().toString())) {
+            if (tv != null && newText != null) tv.setText(newText);
+            return;
+        }
+        tv.animate().cancel();
+        tv.animate().alpha(0f).setDuration(120).withEndAction(() -> {
+            tv.setText(newText);
+            tv.animate().alpha(1f).setDuration(180).start();
+        }).start();
+    }
+
     private boolean isWifiConnected() {
         try {
             android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -853,7 +865,7 @@ public class MainActivity extends Activity {
             chartView.setData(pingVals);
 
             StabilityEngine.Result stab = StabilityEngine.analyze(logs, 20);
-            tvStabLabel.setText(stab.label);
+            setTextAnimated(tvStabLabel, stab.label);
             tvStabLabel.setTextColor(stab.labelColor);
             tvStabDetails.setText(
                     "Ping variation: " + String.format("%.1f", stab.pingStdDev) + "ms\n" +
