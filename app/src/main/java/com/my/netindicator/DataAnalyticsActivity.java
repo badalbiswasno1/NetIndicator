@@ -97,6 +97,59 @@ public class DataAnalyticsActivity extends Activity {
         });
         main.addView(spinner);
 
+        LinearLayout presetRow = new LinearLayout(this);
+        presetRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams presetRowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        presetRowParams.topMargin = 10;
+        presetRowParams.bottomMargin = 10;
+
+        Button todayBtn = new Button(this);
+        todayBtn.setText("Today");
+        todayBtn.setTextSize(12);
+        todayBtn.setBackgroundColor(Color.parseColor("#333333"));
+        todayBtn.setTextColor(Color.WHITE);
+        todayBtn.setOnClickListener(v -> {
+            Calendar midnight = Calendar.getInstance();
+            midnight.set(Calendar.HOUR_OF_DAY, 0);
+            midnight.set(Calendar.MINUTE, 0);
+            midnight.set(Calendar.SECOND, 0);
+            long minsSinceMidnight = (System.currentTimeMillis() - midnight.getTimeInMillis()) / 60000;
+            selectedMinutes = (int) Math.max(1, minsSinceMidnight);
+            performAnalysis();
+        });
+        LinearLayout.LayoutParams presetBtnParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        presetBtnParams.setMargins(0, 0, 6, 0);
+        presetRow.addView(todayBtn, presetBtnParams);
+
+        Button weekBtn = new Button(this);
+        weekBtn.setText("This Week");
+        weekBtn.setTextSize(12);
+        weekBtn.setBackgroundColor(Color.parseColor("#333333"));
+        weekBtn.setTextColor(Color.WHITE);
+        weekBtn.setOnClickListener(v -> {
+            selectedMinutes = 7 * 24 * 60;
+            performAnalysis();
+        });
+        LinearLayout.LayoutParams presetBtnParams2 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        presetBtnParams2.setMargins(6, 0, 6, 0);
+        presetRow.addView(weekBtn, presetBtnParams2);
+
+        Button monthBtn = new Button(this);
+        monthBtn.setText("This Month");
+        monthBtn.setTextSize(12);
+        monthBtn.setBackgroundColor(Color.parseColor("#333333"));
+        monthBtn.setTextColor(Color.WHITE);
+        monthBtn.setOnClickListener(v -> {
+            selectedMinutes = 30 * 24 * 60;
+            performAnalysis();
+        });
+        LinearLayout.LayoutParams presetBtnParams3 = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        presetBtnParams3.setMargins(6, 0, 0, 0);
+        presetRow.addView(monthBtn, presetBtnParams3);
+
+        main.addView(presetRow, presetRowParams);
+
         // Analyze button
         Button analyzeBtn = new Button(this);
         analyzeBtn.setText(" Analyze");
