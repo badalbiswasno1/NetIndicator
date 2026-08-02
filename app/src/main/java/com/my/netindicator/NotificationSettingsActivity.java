@@ -51,6 +51,10 @@ public class NotificationSettingsActivity extends Activity {
         });
         main.addView(toggleBtn);
 
+        addToggle(main, "Low Signal Alerts", "alert_low_signal", true);
+        addToggle(main, "Ping Spike Alerts", "alert_ping", true);
+        addToggle(main, "Sound on Alerts", "alert_sound", false);
+
         Button backBtn = new Button(this);
         backBtn.setText("< Back");
         backBtn.setBackgroundColor(Color.parseColor("#333333"));
@@ -60,4 +64,25 @@ public class NotificationSettingsActivity extends Activity {
 
         setContentView(scroll);
     }
+
+    private void addToggle(LinearLayout parent, String label, String key, boolean defaultVal) {
+        boolean val = prefs.getBoolean(key, defaultVal);
+        Button btn = new Button(this);
+        btn.setText(label + ": " + (val ? "ON" : "OFF"));
+        btn.setBackgroundColor(val ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+        btn.setTextColor(Color.WHITE);
+        btn.setOnClickListener(v -> {
+            boolean newVal = !prefs.getBoolean(key, defaultVal);
+            prefs.edit().putBoolean(key, newVal).apply();
+            btn.setText(label + ": " + (newVal ? "ON" : "OFF"));
+            btn.setBackgroundColor(newVal ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+        });
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        p.topMargin = 10;
+        main_ref = parent;
+        parent.addView(btn, p);
+    }
+
+    private LinearLayout main_ref;
 }

@@ -240,7 +240,9 @@ public class FloatingService extends Service {
                 lastGrade = gradeFinal;
                 lastPing = pingText;
                 NetworkWidgetProvider.updateWidgets(FloatingService.this, gradeFinal, pingText);
-                if (lastAlertPing >= 0 && ping >= 0 && ping > lastAlertPing * 2 && ping > 150) {
+                android.content.SharedPreferences appSettingsPing = getSharedPreferences("AppSettings", MODE_PRIVATE);
+                boolean pingAlertsOn = appSettingsPing.getBoolean("alert_ping", true);
+                if (pingAlertsOn && lastAlertPing >= 0 && ping >= 0 && ping > lastAlertPing * 2 && ping > 150) {
                     sendAlert("Ping Increased", "Latency jumped to " + ping + "ms");
                 }
                 if (ping >= 0) lastAlertPing = ping;
@@ -318,9 +320,12 @@ public class FloatingService extends Service {
         try {
             if (!prefs.isVisible()) return;
 
+            android.content.SharedPreferences appSettings = getSharedPreferences("AppSettings", MODE_PRIVATE);
+            boolean lowSignalAlertsOn = appSettings.getBoolean("alert_low_signal", true);
+
             String baseType = grade.length() > 0 ? grade.substring(0, 1) : "?";
 
-            if (lastAlertDbm != 0 && signalDbm != 0 && (signalDbm - lastAlertDbm) <= -15) {
+            if (lowSignalAlertsOn && lastAlertDbm != 0 && signalDbm != 0 && (signalDbm - lastAlertDbm) <= -15) {
                 sendAlert("Signal Dropped", "Signal weakened to " + signalDbm + " dBm");
             }
 
@@ -373,13 +378,17 @@ public class FloatingService extends Service {
             Intent openIntent = new Intent(this, MainActivity.class);
             PendingIntent openPendingIntent = PendingIntent.getActivity(this, 2, openIntent,
                     PendingIntent.FLAG_IMMUTABLE);
-            Notification n = new NotificationCompat.Builder(this, alertChannelId)
+            boolean soundOn = getSharedPreferences("AppSettings", MODE_PRIVATE).getBoolean("alert_sound", false);
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, alertChannelId)
                     .setContentTitle(title)
                     .setContentText(message)
                     .setSmallIcon(android.R.drawable.ic_menu_compass)
                     .setContentIntent(openPendingIntent)
-                    .setAutoCancel(true)
-                    .build();
+                    .setAutoCancel(true);
+            if (soundOn) {
+                builder.setDefaults(Notification.DEFAULT_SOUND);
+            }
+            Notification n = builder.build();
             manager.notify((int) System.currentTimeMillis(), n);
         } catch (Exception e) {
             e.printStackTrace();
