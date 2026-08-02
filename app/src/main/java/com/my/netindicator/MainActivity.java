@@ -383,13 +383,16 @@ public class MainActivity extends Activity {
         btnParams3.setMargins(6, 0, 0, 0);
         btnRow.addView(settingsBtn, btnParams3);
 
+        com.google.android.material.card.MaterialCardView healthCardWrap = new com.google.android.material.card.MaterialCardView(this);
+        float density1 = getResources().getDisplayMetrics().density;
+        healthCardWrap.setRadius(18f * density1);
+        healthCardWrap.setCardElevation(8f * density1);
+        healthCardWrap.setCardBackgroundColor(Color.parseColor("#1A1A1A"));
+        healthCardWrap.setStrokeWidth(0);
         LinearLayout healthCard = new LinearLayout(this);
         healthCard.setOrientation(LinearLayout.VERTICAL);
-        android.graphics.drawable.GradientDrawable cardBg = new android.graphics.drawable.GradientDrawable();
-        cardBg.setColor(Color.parseColor("#1A1A1A"));
-        cardBg.setCornerRadius(24f);
-        healthCard.setBackground(cardBg);
         healthCard.setPadding(30, 24, 30, 24);
+        healthCardWrap.addView(healthCard);
         LinearLayout.LayoutParams healthCardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         healthCardParams.topMargin = 10;
@@ -434,15 +437,18 @@ public class MainActivity extends Activity {
         tvHealthJitter.setTextSize(13);
         healthCard.addView(tvHealthJitter);
 
-        main.addView(healthCard, healthCardParams);
+        main.addView(healthCardWrap, healthCardParams);
 
+        com.google.android.material.card.MaterialCardView stabCardWrap = new com.google.android.material.card.MaterialCardView(this);
+        float density2 = getResources().getDisplayMetrics().density;
+        stabCardWrap.setRadius(18f * density2);
+        stabCardWrap.setCardElevation(8f * density2);
+        stabCardWrap.setCardBackgroundColor(Color.parseColor("#1A1A1A"));
+        stabCardWrap.setStrokeWidth(0);
         LinearLayout stabilityCard = new LinearLayout(this);
         stabilityCard.setOrientation(LinearLayout.VERTICAL);
-        android.graphics.drawable.GradientDrawable stabBg = new android.graphics.drawable.GradientDrawable();
-        stabBg.setColor(Color.parseColor("#1A1A1A"));
-        stabBg.setCornerRadius(24f);
-        stabilityCard.setBackground(stabBg);
         stabilityCard.setPadding(30, 24, 30, 24);
+        stabCardWrap.addView(stabilityCard);
         LinearLayout.LayoutParams stabCardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         stabCardParams.bottomMargin = 20;
@@ -468,15 +474,18 @@ public class MainActivity extends Activity {
         tvStabDetails.setTextSize(13);
         stabilityCard.addView(tvStabDetails);
 
-        main.addView(stabilityCard, stabCardParams);
+        main.addView(stabCardWrap, stabCardParams);
 
+        com.google.android.material.card.MaterialCardView gameCardWrap = new com.google.android.material.card.MaterialCardView(this);
+        float density3 = getResources().getDisplayMetrics().density;
+        gameCardWrap.setRadius(18f * density3);
+        gameCardWrap.setCardElevation(8f * density3);
+        gameCardWrap.setCardBackgroundColor(Color.parseColor("#1A1A1A"));
+        gameCardWrap.setStrokeWidth(0);
         LinearLayout gamingCard = new LinearLayout(this);
         gamingCard.setOrientation(LinearLayout.VERTICAL);
-        android.graphics.drawable.GradientDrawable gameBg = new android.graphics.drawable.GradientDrawable();
-        gameBg.setColor(Color.parseColor("#1A1A1A"));
-        gameBg.setCornerRadius(24f);
-        gamingCard.setBackground(gameBg);
         gamingCard.setPadding(30, 24, 30, 24);
+        gameCardWrap.addView(gamingCard);
         LinearLayout.LayoutParams gameCardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         gameCardParams.bottomMargin = 20;
@@ -510,7 +519,7 @@ public class MainActivity extends Activity {
         tvGame3.setPadding(0, 4, 0, 4);
         gamingCard.addView(tvGame3);
 
-        main.addView(gamingCard, gameCardParams);
+        main.addView(gameCardWrap, gameCardParams);
 
         main.addView(btnRow, rowParams);
 
