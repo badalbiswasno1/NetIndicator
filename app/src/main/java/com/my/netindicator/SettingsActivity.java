@@ -38,16 +38,16 @@ public class SettingsActivity extends Activity {
         title.setPadding(0, 0, 0, 30);
         main.addView(title);
 
-        addMenuItem(main, "🌐", langManager.get("language"), LanguageActivity.class);
-        addMenuItem(main, "📱", "Floating Window", FloatingSettingsActivity.class);
-        addMenuItem(main, "🌐", "Ping Server", PingServerActivity.class);
-        addMenuItem(main, "📊", "History Limit", HistoryLimitActivity.class);
-        addMenuItem(main, "🎨", "Theme", ThemeActivity.class);
-        addMenuItem(main, "🔔", "Notification", NotificationSettingsActivity.class);
-        addMenuItem(main, "🚀", "Auto Start", AutoStartActivity.class);
-        addMenuItem(main, "💾", "Export Data", ExportActivity.class);
-        addMenuItem(main, "🗄", "Backup & Restore", BackupRestoreActivity.class);
-        addMenuItem(main, "ℹ", "About & Feedback", AboutActivity.class);
+        addMenuItem(main, R.drawable.ic_language, langManager.get("language"), LanguageActivity.class);
+        addMenuItem(main, R.drawable.ic_phone, "Floating Window", FloatingSettingsActivity.class);
+        addMenuItem(main, R.drawable.ic_language, "Ping Server", PingServerActivity.class);
+        addMenuItem(main, R.drawable.ic_bar_chart, "History Limit", HistoryLimitActivity.class);
+        addMenuItem(main, R.drawable.ic_palette, "Theme", ThemeActivity.class);
+        addMenuItem(main, R.drawable.ic_notifications, "Notification", NotificationSettingsActivity.class);
+        addMenuItem(main, R.drawable.ic_rocket, "Auto Start", AutoStartActivity.class);
+        addMenuItem(main, R.drawable.ic_save, "Export Data", ExportActivity.class);
+        addMenuItem(main, R.drawable.ic_backup, "Backup & Restore", BackupRestoreActivity.class);
+        addMenuItem(main, R.drawable.ic_info, "About & Feedback", AboutActivity.class);
 
         TextView about = new TextView(this);
         about.setText("True Network v3.0\nDeveloped by: Badal Biswas");
@@ -67,9 +67,11 @@ public class SettingsActivity extends Activity {
         setContentView(scroll);
     }
 
-    private void addMenuItem(LinearLayout parent, String icon, String label, Class<?> target) {
+    private void addMenuItem(LinearLayout parent, int iconRes, String label, Class<?> target) {
         Button btn = new Button(this);
-        btn.setText(icon + "  " + label + "  >");
+        btn.setText("  " + label + "  >");
+        btn.setCompoundDrawablesWithIntrinsicBounds(iconRes, 0, 0, 0);
+        btn.setCompoundDrawablePadding(20);
         btn.setBackgroundColor(Color.parseColor("#1A1A1A"));
         btn.setTextColor(Color.WHITE);
         btn.setTextSize(15);

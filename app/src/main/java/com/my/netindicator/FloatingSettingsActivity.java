@@ -36,7 +36,9 @@ public class FloatingSettingsActivity extends Activity {
         scroll.addView(main);
 
         TextView title = new TextView(this);
-        title.setText("📱 Floating Window");
+        title.setText(" Floating Window");
+        title.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_phone, 0, 0, 0);
+        title.setCompoundDrawablePadding(15);
         title.setTextColor(Color.WHITE);
         title.setTextSize(22);
         title.setTypeface(null, android.graphics.Typeface.BOLD);

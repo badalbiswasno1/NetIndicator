@@ -331,7 +331,9 @@ public class MainActivity extends Activity {
         clearBtn.setMinimumHeight(0);
         clearBtn.setTextSize(12);
         clearBtn.setAllCaps(false);
-        clearBtn.setText("🗑 Clear");
+        clearBtn.setText(" Clear");
+        clearBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_delete, 0, 0, 0);
+        clearBtn.setCompoundDrawablePadding(10);
         clearBtn.setBackgroundColor(Color.parseColor("#E63329"));
         clearBtn.setTextColor(Color.WHITE);
         clearBtn.setOnClickListener(v -> {
@@ -355,7 +357,9 @@ public class MainActivity extends Activity {
         analyticsBtn.setMinimumHeight(0);
         analyticsBtn.setTextSize(12);
         analyticsBtn.setAllCaps(false);
-        analyticsBtn.setText("📊 Stats");
+        analyticsBtn.setText(" Stats");
+        analyticsBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bar_chart, 0, 0, 0);
+        analyticsBtn.setCompoundDrawablePadding(10);
         analyticsBtn.setBackgroundColor(Color.parseColor("#0099FF"));
         analyticsBtn.setTextColor(Color.WHITE);
         analyticsBtn.setOnClickListener(v -> {
@@ -372,7 +376,9 @@ public class MainActivity extends Activity {
         settingsBtn.setMinimumHeight(0);
         settingsBtn.setTextSize(12);
         settingsBtn.setAllCaps(false);
-        settingsBtn.setText("⚙ Setup");
+        settingsBtn.setText(" Setup");
+        settingsBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_settings, 0, 0, 0);
+        settingsBtn.setCompoundDrawablePadding(10);
         settingsBtn.setBackgroundColor(Color.parseColor("#333333"));
         settingsBtn.setTextColor(Color.WHITE);
         settingsBtn.setOnClickListener(v -> {

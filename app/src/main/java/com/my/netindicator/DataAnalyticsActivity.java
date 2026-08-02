@@ -63,7 +63,9 @@ public class DataAnalyticsActivity extends Activity {
         titleRow.addView(backArrow);
 
         TextView title = new TextView(this);
-        title.setText("📊 " + langManager.get("data_analytics"));
+        title.setText(" " + langManager.get("data_analytics"));
+        title.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bar_chart, 0, 0, 0);
+        title.setCompoundDrawablePadding(15);
         title.setTextColor(Color.WHITE);
         title.setTextSize(24);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
@@ -97,7 +99,9 @@ public class DataAnalyticsActivity extends Activity {
 
         // Analyze button
         Button analyzeBtn = new Button(this);
-        analyzeBtn.setText("🔍 Analyze");
+        analyzeBtn.setText(" Analyze");
+        analyzeBtn.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
+        analyzeBtn.setCompoundDrawablePadding(10);
         analyzeBtn.setBackgroundColor(Color.parseColor("#00CC44"));
         analyzeBtn.setTextColor(Color.WHITE);
         analyzeBtn.setOnClickListener(v -> performAnalysis());

@@ -30,7 +30,9 @@ public class LanguageActivity extends Activity {
         scroll.addView(main);
 
         TextView title = new TextView(this);
-        title.setText("🌐 " + langManager.get("language"));
+        title.setText(" " + langManager.get("language"));
+        title.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_language, 0, 0, 0);
+        title.setCompoundDrawablePadding(15);
         title.setTextColor(Color.WHITE);
         title.setTextSize(22);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
