@@ -52,6 +52,11 @@ public class FloatingSettingsActivity extends Activity {
             prefs.setVisible(newVal);
             toggleBtn.setText(newVal ? "Floating: ON" : "Floating: OFF");
             toggleBtn.setBackgroundColor(newVal ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+            if (newVal) {
+                startService(new android.content.Intent(this, FloatingService.class));
+            } else {
+                stopService(new android.content.Intent(this, FloatingService.class));
+            }
         });
         main.addView(toggleBtn);
 
