@@ -46,6 +46,8 @@ public class SettingsActivity extends Activity {
         addMenuItem(main, "🔔", "Notification", NotificationSettingsActivity.class);
         addMenuItem(main, "🚀", "Auto Start", AutoStartActivity.class);
         addMenuItem(main, "💾", "Export Data", ExportActivity.class);
+        addMenuItem(main, "🗄", "Backup & Restore", BackupRestoreActivity.class);
+        addMenuItem(main, "ℹ", "About & Feedback", AboutActivity.class);
 
         TextView about = new TextView(this);
         about.setText("True Network v3.0\nDeveloped by: Badal Biswas");
