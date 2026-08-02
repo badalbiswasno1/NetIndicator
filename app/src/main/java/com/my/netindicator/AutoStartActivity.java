@@ -55,8 +55,29 @@ public class AutoStartActivity extends Activity {
         info.setText("When enabled, True Network will start monitoring automatically when your phone boots up.");
         info.setTextColor(Color.parseColor("#AAAAAA"));
         info.setTextSize(13);
-        info.setPadding(0, 20, 0, 0);
+        info.setPadding(0, 20, 0, 20);
         main.addView(info);
+
+        boolean batterySaver = prefs.getBoolean("battery_saver", false);
+        Button batteryBtn = new Button(this);
+        batteryBtn.setText("Battery Saver: " + (batterySaver ? "ON" : "OFF"));
+        batteryBtn.setBackgroundColor(batterySaver ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+        batteryBtn.setTextColor(Color.WHITE);
+        batteryBtn.setOnClickListener(v -> {
+            boolean newVal = !prefs.getBoolean("battery_saver", false);
+            prefs.edit().putBoolean("battery_saver", newVal).apply();
+            batteryBtn.setText("Battery Saver: " + (newVal ? "ON" : "OFF"));
+            batteryBtn.setBackgroundColor(newVal ? Color.parseColor("#00CC44") : Color.parseColor("#E63329"));
+            Toast.makeText(this, "Restart the app for this to take effect", Toast.LENGTH_SHORT).show();
+        });
+        main.addView(batteryBtn);
+
+        TextView batteryInfo = new TextView(this);
+        batteryInfo.setText("Reduces update frequency to save battery. Restart the app after changing this.");
+        batteryInfo.setTextColor(Color.parseColor("#AAAAAA"));
+        batteryInfo.setTextSize(13);
+        batteryInfo.setPadding(0, 10, 0, 0);
+        main.addView(batteryInfo);
 
         Button backBtn = new Button(this);
         backBtn.setText("< Back");
