@@ -58,6 +58,7 @@
         <activity android:name=".ExportActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".BackupRestoreActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".AboutActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".PrivacyActivity" android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
         <service
             android:name=".FloatingService"
             android:foregroundServiceType="dataSync|location"

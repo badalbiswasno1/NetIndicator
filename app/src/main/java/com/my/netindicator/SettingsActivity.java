@@ -48,6 +48,7 @@ public class SettingsActivity extends Activity {
         addMenuItem(main, R.drawable.ic_save, "Export Data", ExportActivity.class);
         addMenuItem(main, R.drawable.ic_backup, "Backup & Restore", BackupRestoreActivity.class);
         addMenuItem(main, R.drawable.ic_info, "About & Feedback", AboutActivity.class);
+        addMenuItem(main, R.drawable.ic_info, "Privacy", PrivacyActivity.class);
 
         TextView about = new TextView(this);
         about.setText("True Network v3.0\nDeveloped by: Badal Biswas");
