@@ -69,7 +69,7 @@ public class SettingsActivity extends Activity {
 
     private void addMenuItem(LinearLayout parent, int iconRes, String label, Class<?> target) {
         Button btn = new Button(this);
-        btn.setText("  " + label + "  >");
+        btn.setText("  " + label);
         btn.setCompoundDrawablesWithIntrinsicBounds(iconRes, 0, 0, 0);
         btn.setCompoundDrawablePadding(20);
         btn.setBackgroundColor(Color.parseColor("#1A1A1A"));
