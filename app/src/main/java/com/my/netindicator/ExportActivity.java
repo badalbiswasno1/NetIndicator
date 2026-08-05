@@ -17,6 +17,9 @@ import java.io.File;
 import java.io.FileWriter;
 import android.content.Intent;
 import androidx.core.content.FileProvider;
+import android.graphics.pdf.PdfDocument;
+import android.graphics.Paint;
+import android.graphics.Canvas;
 
 public class ExportActivity extends Activity {
     private NetworkLogger logger;
@@ -80,6 +83,20 @@ public class ExportActivity extends Activity {
         shareJsonBtn.setOnClickListener(v -> exportJSON(true));
         main.addView(shareJsonBtn);
 
+        Button exportPdfBtn = new Button(this);
+        exportPdfBtn.setText("Export as PDF");
+        exportPdfBtn.setBackgroundColor(Color.parseColor("#00CC44"));
+        exportPdfBtn.setTextColor(Color.WHITE);
+        exportPdfBtn.setOnClickListener(v -> exportPDF(false));
+        main.addView(exportPdfBtn);
+
+        Button sharePdfBtn = new Button(this);
+        sharePdfBtn.setText("Export & Share PDF");
+        sharePdfBtn.setBackgroundColor(Color.parseColor("#0099FF"));
+        sharePdfBtn.setTextColor(Color.WHITE);
+        sharePdfBtn.setOnClickListener(v -> exportPDF(true));
+        main.addView(sharePdfBtn);
+
         Button backBtn = new Button(this);
         backBtn.setText("< Back");
         backBtn.setBackgroundColor(Color.parseColor("#333333"));
@@ -137,6 +154,62 @@ public class ExportActivity extends Activity {
             }
         } catch (Exception e) {
             Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void exportPDF(boolean share) {
+        try {
+            JSONArray logs = logger.getLogs();
+            PdfDocument document = new PdfDocument();
+            Paint paint = new Paint();
+            Paint titlePaint = new Paint();
+            titlePaint.setTextSize(16);
+            titlePaint.setFakeBoldText(true);
+            paint.setTextSize(11);
+
+            int pageWidth = 595, pageHeight = 842;
+            int rowsPerPage = 45;
+            int totalRows = logs.length();
+            int pageCount = Math.max(1, (int) Math.ceil(totalRows / (double) rowsPerPage));
+
+            for (int p = 0; p < pageCount; p++) {
+                PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, p + 1).create();
+                PdfDocument.Page page = document.startPage(pageInfo);
+                Canvas canvas = page.getCanvas();
+                int y = 40;
+                canvas.drawText("True Network - Export Report (Page " + (p + 1) + "/" + pageCount + ")", 30, y, titlePaint);
+                y += 30;
+                canvas.drawText(String.format("%-10s %-10s %-8s %-8s %-8s", "Date", "Time", "Grade", "Ping", "Data"), 30, y, paint);
+                y += 16;
+
+                int start = p * rowsPerPage;
+                int end = Math.min(start + rowsPerPage, totalRows);
+                for (int i = start; i < end; i++) {
+                    JSONObject obj = logs.getJSONObject(i);
+                    String row = String.format("%-10s %-10s %-8s %-8s %-8s",
+                            obj.optString("date", ""),
+                            obj.optString("time", ""),
+                            obj.optString("grade", ""),
+                            obj.optLong("ping", 0) + "ms",
+                            obj.optLong("data", 0) + "KB");
+                    canvas.drawText(row, 30, y, paint);
+                    y += 14;
+                }
+                document.finishPage(page);
+            }
+
+            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File file = new File(dir, "TrueNetwork_export.pdf");
+            document.writeTo(new java.io.FileOutputStream(file));
+            document.close();
+
+            if (share) {
+                shareFile(file, "application/pdf");
+            } else {
+                Toast.makeText(this, "Exported to Downloads/TrueNetwork_export.pdf", Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "PDF export failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
