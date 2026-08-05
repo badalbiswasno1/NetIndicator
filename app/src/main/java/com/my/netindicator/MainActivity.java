@@ -75,6 +75,9 @@ public class MainActivity extends Activity {
         startTime = System.currentTimeMillis();
         logger = new NetworkLogger(this);
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        boolean batterySaverOn = getSharedPreferences("AppSettings", MODE_PRIVATE).getBoolean("battery_saver", false);
+        int pingIntervalMs = batterySaverOn ? 5000 : 2000;
+        int healthIntervalMs = batterySaverOn ? 45000 : 15000;
         baselineRx = android.net.TrafficStats.getMobileRxBytes();
         baselineTx = android.net.TrafficStats.getMobileTxBytes();
 
@@ -130,7 +133,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 });
-                handler.postDelayed(this, 2000);
+                handler.postDelayed(this, pingIntervalMs);
             }
         };
         handler.post(updater);
@@ -145,7 +148,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
                 }).start();
-                healthHandler.postDelayed(this, 15000);
+                healthHandler.postDelayed(this, healthIntervalMs);
             }
         };
         healthHandler.postDelayed(healthUpdater, 2000);
