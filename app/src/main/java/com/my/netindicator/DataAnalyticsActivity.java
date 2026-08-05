@@ -22,6 +22,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.ArrayList;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.os.Environment;
+import android.content.Intent;
+import androidx.core.content.FileProvider;
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class DataAnalyticsActivity extends Activity {
     private LanguageManager langManager;
@@ -29,6 +39,7 @@ public class DataAnalyticsActivity extends Activity {
     private TextView tvResult;
     private String selectedDate = "";
     private int selectedMinutes = 30;
+    private List<Long> lastFilteredPings = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -150,6 +161,13 @@ public class DataAnalyticsActivity extends Activity {
 
         main.addView(presetRow, presetRowParams);
 
+        Button exportPngBtn = new Button(this);
+        exportPngBtn.setText("Export Graph as PNG");
+        exportPngBtn.setBackgroundColor(Color.parseColor("#0099FF"));
+        exportPngBtn.setTextColor(Color.WHITE);
+        exportPngBtn.setOnClickListener(v -> exportChartPng());
+        main.addView(exportPngBtn);
+
         // Analyze button
         Button analyzeBtn = new Button(this);
         analyzeBtn.setText(" Analyze");
@@ -193,6 +211,7 @@ public class DataAnalyticsActivity extends Activity {
 
             // Filter logs by selected timeframe (last N minutes from now)
             long cutoffTime = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(selectedMinutes);
+            lastFilteredPings.clear();
             StringBuilder sb = new StringBuilder();
             
             sb.append("Date: ").append(selectedDate).append("\n");
@@ -219,6 +238,7 @@ public class DataAnalyticsActivity extends Activity {
                     if (filteredCount < 30) { // Show max 30 recent
                         String grade = log.getString("grade");
                         long ping = log.getLong("ping");
+                        lastFilteredPings.add(0, ping);
                         
                         sb.append("\n").append(timeStr.substring(0, Math.min(8, timeStr.length()))).append(" ")
                           .append(String.format("%-6s", grade)).append(" ");
@@ -261,6 +281,63 @@ public class DataAnalyticsActivity extends Activity {
             tvResult.setText(sb.toString());
         } catch (Exception e) {
             tvResult.setText("Error: " + e.getMessage());
+        }
+    }
+
+    private void exportChartPng() {
+        try {
+            if (lastFilteredPings.isEmpty()) {
+                Toast.makeText(this, "Run Analyze first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int w = 900, h = 500;
+            Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bmp);
+            canvas.drawColor(Color.parseColor("#111111"));
+
+            Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            linePaint.setColor(Color.parseColor("#00CC44"));
+            linePaint.setStrokeWidth(4f);
+            linePaint.setStyle(Paint.Style.STROKE);
+
+            Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            textPaint.setColor(Color.WHITE);
+            textPaint.setTextSize(28f);
+            canvas.drawText("True Network - Ping History", 30, 40, textPaint);
+
+            long max = 10;
+            for (long v : lastFilteredPings) if (v > max) max = v;
+            max = (long) (max * 1.15);
+
+            int padLeft = 80, padRight = 30, padTop = 70, padBottom = 50;
+            int n = lastFilteredPings.size();
+            float chartW = w - padLeft - padRight;
+            float chartH = h - padTop - padBottom;
+
+            android.graphics.Path path = new android.graphics.Path();
+            for (int i = 0; i < n; i++) {
+                long v = Math.max(lastFilteredPings.get(i), 0);
+                float x = padLeft + (n == 1 ? chartW / 2f : chartW * i / (float) (n - 1));
+                float y = padTop + chartH - (chartH * v / (float) max);
+                if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+            }
+            canvas.drawPath(path, linePaint);
+
+            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File file = new File(dir, "TrueNetwork_chart.png");
+            FileOutputStream fos = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+
+            android.net.Uri uri = FileProvider.getUriForFile(this, "com.my.netindicator.fileprovider", file);
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("image/png");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(shareIntent, "Share network graph"));
+        } catch (Exception e) {
+            Toast.makeText(this, "Export failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
