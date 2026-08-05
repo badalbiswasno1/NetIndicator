@@ -212,11 +212,12 @@ public class MainActivity extends Activity {
         });
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Color.parseColor("#111111"));
+        int themeBg = ThemeActivity.getThemeBg(getSharedPreferences("AppSettings", MODE_PRIVATE).getString("theme", "dark"));
+        scroll.setBackgroundColor(themeBg);
 
         LinearLayout main = new LinearLayout(this);
         main.setOrientation(LinearLayout.VERTICAL);
-        main.setBackgroundColor(Color.parseColor("#111111"));
+        main.setBackgroundColor(themeBg);
         main.setPadding(40, 60, 40, 40);
         main.setGravity(Gravity.CENTER_HORIZONTAL);
         scroll.addView(main);
