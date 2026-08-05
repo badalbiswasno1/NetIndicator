@@ -18,10 +18,37 @@ public class NetworkWidgetProvider extends AppWidgetProvider {
             prefs.edit().putString("grade", grade).putString("ping", ping).apply();
 
             AppWidgetManager manager = AppWidgetManager.getInstance(context);
+
             int[] ids = manager.getAppWidgetIds(new android.content.ComponentName(context, NetworkWidgetProvider.class));
             for (int id : ids) {
                 pushUpdate(context, manager, id, grade, ping);
             }
+
+            int[] smallIds = manager.getAppWidgetIds(new android.content.ComponentName(context, NetworkWidgetSmallProvider.class));
+            for (int id : smallIds) {
+                RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_small);
+                views.setTextViewText(R.id.widgetGrade, grade);
+                manager.updateAppWidget(id, views);
+            }
+
+            String signal = prefs.getString("signal", "Signal: -- dBm");
+            int[] largeIds = manager.getAppWidgetIds(new android.content.ComponentName(context, NetworkWidgetLargeProvider.class));
+            for (int id : largeIds) {
+                RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_large);
+                views.setTextViewText(R.id.widgetGrade, grade);
+                views.setTextViewText(R.id.widgetPing, ping);
+                views.setTextViewText(R.id.widgetSignal, signal);
+                manager.updateAppWidget(id, views);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void updateSignal(Context context, String signal) {
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString("signal", signal).apply();
         } catch (Exception e) {
             e.printStackTrace();
         }

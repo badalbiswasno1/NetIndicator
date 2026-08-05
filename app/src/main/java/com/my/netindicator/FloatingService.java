@@ -239,6 +239,7 @@ public class FloatingService extends Service {
                 final String pingText = ping >= 0 ? ping + "ms" : "--";
                 lastGrade = gradeFinal;
                 lastPing = pingText;
+                NetworkWidgetProvider.updateSignal(FloatingService.this, "Signal: " + signalDbm + " dBm");
                 NetworkWidgetProvider.updateWidgets(FloatingService.this, gradeFinal, pingText);
                 android.content.SharedPreferences appSettingsPing = getSharedPreferences("AppSettings", MODE_PRIVATE);
                 boolean pingAlertsOn = appSettingsPing.getBoolean("alert_ping", true);
